@@ -407,10 +407,11 @@
         <label>Skiva (cm): <input type="number" id="plateDiameterCm" value="45" min="5" max="100"></label>
         <label>Max tapp (%): <input type="number" id="lossThresholdPct" value="15" min="5" max="50"></label>
         <label>Min v (m/s): <input type="number" id="minVelThresh" value="0.18" step="0.02" min="0.05" max="0.8"></label>
-        <select id="fpsMode" title="Korrigera tidsskala för iPhone Slo-Mo">
-            <option value="1">Normal (1x / 60fps)</option>
-            <option value="4">Slo-Mo 120fps (4x)</option>
-            <option value="8">Slo-Mo 240fps (8x)</option>
+        <select id="fpsMode" title="Välj bildfrekvens och slow-motion-faktor">
+            <option value="60_1">60 fps (1x)</option>
+            <option value="30_1">30 fps (1x)</option>
+            <option value="120_4">Slo-Mo 120fps (4x)</option>
+            <option value="240_8">Slo-Mo 240fps (8x)</option>
         </select>
         <button id="btnResetSet" class="danger" style="min-height: 30px; padding: 4px 9px;">Nollställ set</button>
     </div>
@@ -480,29 +481,42 @@
 
     // Interaktionsläge: 'none', 'calibrate', 'pick_target'
     let interactionMode = 'none';
-    let calibPoints = []; // 2 punkter över viktskivans diameter
+    let calibPoints = [];
     let pixelsPerMeter = null;
 
     // Spårningsdata (Template Matching i luma-kanal)
     let isTracking = false;
-    let trackPos = null; // { x, y } i videopixlar
-    let templatePatch = null; // Float32Array gråskala
+    let trackPos = null;
+    let templatePatch = null;
     const PATCH_RADIUS = 14; // 29x29 px mall
-    const SEARCH_RADIUS = 42; // Sökområde runt föregående position
+
+    function getFpsConfig() {
+        const val = document.getElementById('fpsMode').value;
+        const parts = val.split('_');
+        return {
+            fps: parseInt(parts[0], 10) || 60,
+            slowMoFactor: parseFloat(parts[1]) || 1
+        };
+    }
+
+    // Större sökradie vid 30 fps eftersom stången hinner förflytta sig längre per bildruta
+    function getSearchRadius() {
+        const { fps } = getFpsConfig();
+        return fps <= 30 ? 64 : 42;
+    }
 
     // Tids- och rörelsehistorik
     let lastTimestampMs = null;
     let smoothY = null;
-    let smoothVy = 0; // m/s (positivt = uppåt i bild)
-    let barPath = []; // { x, y } för visuell lyftbana
+    let smoothVy = 0;
+    let barPath = [];
 
-    // Repetitionsdetektering (Tillståndsmaskin)
-    // 'IDLE' -> 'ECCENTRIC' (på väg ner) -> 'CONCENTRIC' (på väg upp)
+    // Repetitionsdetektering
     let repState = 'IDLE';
     let repStartY = null;
     let repBottomY = null;
-    let currentRepSamples = []; // { t, v, y } under koncentrisk fas
-    let completedReps = []; // { repNum, peakVel, meanVel, lossPct, curve, romCm }
+    let currentRepSamples = [];
+    let completedReps = [];
     let selectedRepIdx = -1;
     let hudAutoOpened = false;
 
@@ -519,7 +533,6 @@
             gain.connect(audioCtx.destination);
 
             if (isStopAlert) {
-                // Dubbel varningssignal vid >= 15% velocity loss
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 osc.frequency.setValueAtTime(580, audioCtx.currentTime + 0.18);
@@ -529,7 +542,6 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.65);
             } else {
-                // Kort positivt pip när ett godkänt rep registreras
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(660, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
@@ -540,7 +552,7 @@
         } catch (e) {}
     }
 
-    // Starta Live-kamera (bakre kamera i 60 fps om möjligt)
+    // Starta Live-kamera
     document.getElementById('btnCamera').addEventListener('click', async () => {
         stopCurrentVideo();
         try {
@@ -555,7 +567,7 @@
             });
             isLiveCamera = true;
             document.getElementById('videoControls').style.display = 'none';
-            document.getElementById('fpsMode').value = '1';
+            document.getElementById('fpsMode').value = '60_1';
             video.srcObject = stream;
             await video.play();
             onVideoReady();
@@ -717,13 +729,11 @@
             }
         } else if (interactionMode === 'pick_target' || !isTracking) {
             if (!pixelsPerMeter) {
-                // Standarduppskattning om användaren hoppar över kalibrering
                 pixelsPerMeter = canvas.height * 0.45;
             }
             lockTargetAt(pt.x, pt.y);
             setInteractionMode('none');
 
-            // Öppna helskärms-HUD automatiskt i live-läge så du ser siffrorna direkt vid ställningen
             if (isLiveCamera && !hudAutoOpened) {
                 fullscreenHud.style.display = 'flex';
                 hudAutoOpened = true;
@@ -731,7 +741,6 @@
         }
     });
 
-    // Extrahera gråskalemall runt vald punkt
     function extractPatch(imgData, cx, cy, radius) {
         const w = imgData.width;
         const h = imgData.height;
@@ -745,7 +754,6 @@
             for (let dx = -radius; dx <= radius; dx++) {
                 const px = Math.max(0, Math.min(w - 1, Math.round(cx + dx)));
                 const pIdx = (py * w + px) * 4;
-                // Snabb luminans (gråskala)
                 patch[idx++] = data[pIdx] * 0.299 + data[pIdx + 1] * 0.587 + data[pIdx + 2] * 0.114;
             }
         }
@@ -765,23 +773,23 @@
         barPath = [{ x, y }];
     }
 
-    // Optisk spårning med Sum of Squared Differences (SSD) + Subpixel-interpolering
     function trackNextFrame(frameData) {
         if (!isTracking || !templatePatch || !trackPos) return;
 
         const w = frameData.width;
         const h = frameData.height;
         const data = frameData.data;
-        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - SEARCH_RADIUS));
-        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + SEARCH_RADIUS));
-        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - SEARCH_RADIUS));
-        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + SEARCH_RADIUS));
+        const searchRadius = getSearchRadius();
+
+        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - searchRadius));
+        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + searchRadius));
+        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - searchRadius));
+        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + searchRadius));
 
         let bestScore = Infinity;
         let bestX = trackPos.x;
         let bestY = trackPos.y;
 
-        // Grovsökning (steg 2 px för maximal 60fps-prestanda på mobil)
         for (let sy = startY; sy <= endY; sy += 2) {
             for (let sx = startX; sx <= endX; sx += 2) {
                 const score = computeSSD(data, w, sx, sy);
@@ -793,7 +801,6 @@
             }
         }
 
-        // Finsökning (1 px runt bästa träff) + parabolisk subpixel-förfining
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 const sx = bestX + dx;
@@ -807,7 +814,6 @@
             }
         }
 
-        // Subpixel-justering i Y-led för mjukare hastighetskurva
         const sTop = computeSSD(data, w, bestX, bestY - 1);
         const sMid = bestScore;
         const sBot = computeSSD(data, w, bestX, bestY + 1);
@@ -820,7 +826,6 @@
         trackPos.x = bestX;
         trackPos.y = bestY + subY;
 
-        // Adaptiv malluppdatering (15% ny bild) så belysningsförändringar under lyftet hanteras
         const currentPatch = extractPatch(frameData, trackPos.x, trackPos.y, PATCH_RADIUS);
         for (let i = 0; i < templatePatch.length; i++) {
             templatePatch[i] = templatePatch[i] * 0.85 + currentPatch[i] * 0.15;
@@ -832,7 +837,6 @@
 
     function computeSSD(data, imgW, cx, cy) {
         let ssd = 0;
-        // Sampla varannan pixel inuti patchen för extrem snabbhet i 60 Hz
         for (let dy = -PATCH_RADIUS; dy <= PATCH_RADIUS; dy += 2) {
             const rowOffset = (cy + dy) * imgW;
             const patchRow = (dy + PATCH_RADIUS) * (PATCH_RADIUS * 2 + 1);
@@ -846,7 +850,6 @@
         return ssd;
     }
 
-    // Fysik- och repetitionsanalys i realtid
     function updateKinematics(nowMs) {
         if (!isTracking || !trackPos || !pixelsPerMeter) return;
 
@@ -856,10 +859,293 @@
             return;
         }
 
-        const slowMoFactor = parseFloat(document.getElementById('fpsMode').value) || 1;
+        const { fps, slowMoFactor } = getFpsConfig();
         const rawDt = (nowMs - lastTimestampMs) / 1000;
         lastTimestampMs = nowMs;
 
-        // Ignorera orimliga tidshopp (t.ex. vid paus/spolning)
         if (rawDt <= 0.002 || rawDt > 0.25) return;
         const dt = rawDt / slowMoFactor;
+
+        // Anpassa filtrering något vid 30 fps så att kurvan förblir responsiv utan att släpa efter
+        const alphaPos = fps <= 30 ? 0.55 : 0.45;
+        const prevSmoothY = smoothY;
+        smoothY = alphaPos * trackPos.y + (1 - alphaPos) * smoothY;
+
+        const instantVy = ((prevSmoothY - smoothY) / pixelsPerMeter) / dt;
+        const alphaVel = fps <= 30 ? 0.5 : 0.4;
+        smoothVy = alphaVel * instantVy + (1 - alphaVel) * smoothVy;
+
+        document.getElementById('hudLiveVel').textContent = `Live: ${Math.max(0, smoothVy).toFixed(2)} m/s`;
+
+        const minVelThresh = parseFloat(document.getElementById('minVelThresh').value) || 0.18;
+        const minRomMeters = 0.22;
+
+        if (repState === 'IDLE') {
+            if (smoothVy < -0.15) {
+                repState = 'ECCENTRIC';
+                repStartY = smoothY;
+                repBottomY = smoothY;
+            }
+        } else if (repState === 'ECCENTRIC') {
+            if (smoothY > repBottomY) {
+                repBottomY = smoothY;
+            }
+            const eccentricDepth = (repBottomY - repStartY) / pixelsPerMeter;
+
+            if (smoothVy > minVelThresh && eccentricDepth >= minRomMeters) {
+                repState = 'CONCENTRIC';
+                currentRepSamples = [{ t: 0, v: smoothVy, y: smoothY }];
+            } else if (Math.abs(smoothVy) < 0.04 && eccentricDepth < minRomMeters) {
+                repState = 'IDLE';
+            }
+        } else if (repState === 'CONCENTRIC') {
+            const lastT = currentRepSamples[currentRepSamples.length - 1].t;
+            currentRepSamples.push({
+                t: lastT + dt,
+                v: Math.max(0, smoothVy),
+                y: smoothY
+            });
+
+            const concentricHeight = (repBottomY - smoothY) / pixelsPerMeter;
+            if (smoothVy <= 0.06 && concentricHeight >= minRomMeters) {
+                finalizeRep();
+                repState = 'IDLE';
+            } else if (smoothVy < -0.15) {
+                repState = 'ECCENTRIC';
+                repStartY = smoothY;
+                repBottomY = smoothY;
+                currentRepSamples = [];
+            }
+        }
+    }
+
+    function finalizeRep() {
+        if (currentRepSamples.length < 3) return;
+
+        let peakVel = 0;
+        let sumVel = 0;
+        currentRepSamples.forEach(s => {
+            if (s.v > peakVel) peakVel = s.v;
+            sumVel += s.v;
+        });
+        const meanVel = sumVel / currentRepSamples.length;
+
+        const repNum = completedReps.length + 1;
+        const prevMax = completedReps.reduce((max, r) => Math.max(max, r.peakVel), 0);
+        const setBaseline = Math.max(prevMax, peakVel);
+
+        const repObj = {
+            repNum,
+            peakVel,
+            meanVel,
+            lossPct: 0,
+            curve: [...currentRepSamples]
+        };
+        completedReps.push(repObj);
+
+        completedReps.forEach(r => {
+            r.lossPct = setBaseline > 0 ? Math.max(0, ((setBaseline - r.peakVel) / setBaseline) * 100) : 0;
+        });
+
+        selectedRepIdx = completedReps.length - 1;
+        const threshold = parseFloat(document.getElementById('lossThresholdPct').value) || 15;
+        const isOverLimit = repObj.lossPct >= threshold;
+
+        playAlertSound(isOverLimit);
+        updateRepUI();
+        drawVelocityCurve(repObj);
+        updateHud(repObj);
+    }
+
+    function updateHud(rep) {
+        const hud = document.getElementById('fullscreenHud');
+        const peakEl = document.getElementById('hudPeakVel');
+        const titleEl = document.getElementById('hudRepTitle');
+        const lossEl = document.getElementById('hudLossBox');
+        const stopBanner = document.getElementById('hudStopBanner');
+        const baseEl = document.getElementById('hudBaseline');
+
+        if (!rep) {
+            hud.className = 'hud-neutral';
+            titleEl.textContent = 'REDO ATT LYFTA';
+            peakEl.textContent = '0.00';
+            lossEl.textContent = 'Velocity Loss: 0.0%';
+            baseEl.textContent = 'Bästa: -- m/s';
+            stopBanner.style.display = 'none';
+            return;
+        }
+
+        const bestVel = completedReps.reduce((m, r) => Math.max(m, r.peakVel), 0);
+        const threshold = parseFloat(document.getElementById('lossThresholdPct').value) || 15;
+
+        baseEl.textContent = `Bästa: ${bestVel.toFixed(2)} m/s`;
+        titleEl.textContent = `REP ${rep.repNum} KLAR`;
+        peakEl.textContent = rep.peakVel.toFixed(2);
+        lossEl.textContent = `Velocity Loss: -${rep.lossPct.toFixed(1)}%`;
+
+        if (rep.lossPct >= threshold) {
+            hud.className = 'hud-red';
+            stopBanner.textContent = `⚠️ ÖVER ${threshold}% TAPP – SLUTA TRÄNA!`;
+            stopBanner.style.display = 'block';
+        } else if (rep.lossPct >= threshold * 0.66) {
+            hud.className = 'hud-yellow';
+            stopBanner.style.display = 'none';
+        } else {
+            hud.className = 'hud-green';
+            stopBanner.style.display = 'none';
+        }
+    }
+
+    function updateRepUI() {
+        const strip = document.getElementById('repStrip');
+        const threshold = parseFloat(document.getElementById('lossThresholdPct').value) || 15;
+
+        if (completedReps.length === 0) {
+            strip.innerHTML = `<div style="font-size: 0.82rem; color: var(--text-muted); padding: 6px 0;">Inga repetitioner registrerade ännu.</div>`;
+            return;
+        }
+
+        strip.innerHTML = completedReps.map((r, idx) => {
+            let statusClass = 'loss-ok';
+            if (r.lossPct >= threshold) statusClass = 'loss-stop';
+            else if (r.lossPct >= threshold * 0.66) statusClass = 'loss-warn';
+
+            const selClass = idx === selectedRepIdx ? 'selected' : '';
+            return `
+                <div class="rep-card ${statusClass} ${selClass}" onclick="selectRep(${idx})">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">REP ${r.repNum}</div>
+                    <div style="font-size: 1.15rem; font-weight: 800; margin: 2px 0;">${r.peakVel.toFixed(2)} <small style="font-size:0.7rem;">m/s</small></div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: ${r.lossPct >= threshold ? '#ef4444' : '#94a3b8'};">
+                        -${r.lossPct.toFixed(1)}% tapp
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    window.selectRep = function(idx) {
+        selectedRepIdx = idx;
+        updateRepUI();
+        drawVelocityCurve(completedReps[idx]);
+    };
+
+    function drawVelocityCurve(rep) {
+        const rect = curveCanvas.getBoundingClientRect();
+        curveCanvas.width = rect.width || 320;
+        curveCanvas.height = rect.height || 80;
+        const w = curveCanvas.width;
+        const h = curveCanvas.height;
+
+        curveCtx.clearRect(0, 0, w, h);
+        if (!rep || !rep.curve || rep.curve.length < 2) {
+            curveCtx.fillStyle = '#64748b';
+            curveCtx.font = '12px -apple-system, sans-serif';
+            curveCtx.fillText('Hastighetskurva (koncentrisk fas) visas här efter rep 1', 12, h / 2 + 4);
+            return;
+        }
+
+        const samples = rep.curve;
+        const maxT = samples[samples.length - 1].t || 1;
+        const maxV = Math.max(rep.peakVel * 1.15, 0.5);
+        const pad = 12;
+
+        const peakY = h - pad - (rep.peakVel / maxV) * (h - pad * 2);
+        curveCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+        curveCtx.setLineDash([4, 4]);
+        curveCtx.beginPath();
+        curveCtx.moveTo(pad, peakY);
+        curveCtx.lineTo(w - pad, peakY);
+        curveCtx.stroke();
+        curveCtx.setLineDash([]);
+
+        curveCtx.beginPath();
+        samples.forEach((s, i) => {
+            const x = pad + (s.t / maxT) * (w - pad * 2);
+            const y = h - pad - (s.v / maxV) * (h - pad * 2);
+            if (i === 0) curveCtx.moveTo(x, y);
+            else curveCtx.lineTo(x, y);
+        });
+        curveCtx.strokeStyle = '#38bdf8';
+        curveCtx.lineWidth = 2.5;
+        curveCtx.stroke();
+
+        curveCtx.fillStyle = '#f8fafc';
+        curveCtx.font = 'bold 11px -apple-system, sans-serif';
+        curveCtx.fillText(`Rep ${rep.repNum} | Peak: ${rep.peakVel.toFixed(2)} m/s | Mean: ${rep.meanVel.toFixed(2)} m/s | Tid: ${maxT.toFixed(2)}s`, pad, 14);
+    }
+
+    function startProcessingLoop() {
+        function step(now) {
+            if (video.readyState >= 2) {
+                if (!video.paused && !video.ended) {
+                    procCtx.drawImage(video, 0, 0, procCanvas.width, procCanvas.height);
+                    const frameData = procCtx.getImageData(0, 0, procCanvas.width, procCanvas.height);
+                    trackNextFrame(frameData);
+                    updateKinematics(performance.now());
+
+                    if (!isLiveCamera) {
+                        seekBar.value = video.currentTime;
+                        document.getElementById('videoTimeLabel').textContent = `${video.currentTime.toFixed(1)}s`;
+                    }
+                }
+                renderViewport();
+            }
+            animFrameId = requestAnimationFrame(step);
+        }
+        animFrameId = requestAnimationFrame(step);
+    }
+
+    function renderViewport() {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        if (calibPoints.length > 0) {
+            ctx.save();
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 3;
+            calibPoints.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
+                ctx.fillStyle = '#a855f7';
+                ctx.fill();
+            });
+            if (calibPoints.length === 2) {
+                ctx.beginPath();
+                ctx.moveTo(calibPoints[0].x, calibPoints[0].y);
+                ctx.lineTo(calibPoints[1].x, calibPoints[1].y);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        if (barPath.length > 1) {
+            ctx.save();
+            ctx.beginPath();
+            barPath.forEach((p, idx) => {
+                if (idx === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            });
+            ctx.strokeStyle = repState === 'CONCENTRIC' ? '#10b981' : 'rgba(56, 189, 248, 0.7)';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        if (isTracking && trackPos) {
+            ctx.save();
+            const r = PATCH_RADIUS;
+            ctx.strokeStyle = repState === 'CONCENTRIC' ? '#10b981' : '#38bdf8';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(trackPos.x - r, trackPos.y - r, r * 2, r * 2);
+
+            ctx.beginPath();
+            ctx.arc(trackPos.x, trackPos.y, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+    drawVelocityCurve(null);
+</script>
+</body>
+</html>

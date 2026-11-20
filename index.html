@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VBT Barbell Tracker – 15% Velocity Loss</title>
+    <style>
+        :root {
+            --bg-dark: #090d16;
+            --bg-panel: #131b2e;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #38bdf8;
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+            --border: #26334d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        header {
+            background-color: var(--bg-panel);
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 10;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title {
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            color: var(--accent);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button, .file-label, select {
+            background-color: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            min-height: 38px;
+            padding: 6px 11px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+
+        button:active, .file-label:active {
+            transform: scale(0.96);
+        }
+
+        button.primary {
+            background-color: var(--accent);
+            color: #090d16;
+            border-color: var(--accent);
+            font-weight: 700;
+        }
+
+        button.success {
+            background-color: var(--green);
+            color: #090d16;
+            border-color: var(--green);
+            font-weight: 700;
+        }
+
+        button.danger {
+            background-color: #7f1d1d;
+            border-color: #991b1b;
+        }
+
+        button.active-step {
+            outline: 2px solid var(--accent);
+            background-color: #26334d;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .sub-bar {
+            background-color: #0f1626;
+            padding: 7px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 10;
+        }
+
+        .status-msg {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent);
+            flex: 1 1 240px;
+        }
+
+        .settings-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .settings-inline input[type="number"] {
+            width: 56px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #fff;
+            padding: 5px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .viewport-container {
+            flex: 1;
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: none;
+        }
+
+        video {
+            display: none;
+        }
+
+        canvas#mainCanvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .empty-state {
+            position: absolute;
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+            pointer-events: none;
+        }
+
+        .empty-state h3 {
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+
+        /* HELSKÄRMS-HUD UNDER SET */
+        #fullscreenHud {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 16px;
+            text-align: center;
+            transition: background-color 0.2s ease;
+        }
+
+        #fullscreenHud.hud-green {
+            background-color: rgba(6, 78, 59, 0.94);
+        }
+
+        #fullscreenHud.hud-yellow {
+            background-color: rgba(120, 53, 15, 0.95);
+        }
+
+        #fullscreenHud.hud-red {
+            background-color: rgba(127, 29, 29, 0.97);
+            animation: pulseAlert 0.6s infinite alternate;
+        }
+
+        #fullscreenHud.hud-neutral {
+            background-color: rgba(9, 13, 22, 0.88);
+        }
+
+        @keyframes pulseAlert {
+            from { background-color: rgba(153, 27, 27, 0.95); }
+            to { background-color: rgba(220, 38, 38, 0.98); }
+        }
+
+        .hud-top {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .hud-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: auto 0;
+        }
+
+        .hud-rep-badge {
+            font-size: 1.5rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .hud-velocity {
+            font-size: clamp(5.5rem, 24vw, 11rem);
+            font-weight: 900;
+            line-height: 0.95;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+        }
+
+        .hud-unit {
+            font-size: 1.8rem;
+            font-weight: 700;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .hud-loss {
+            margin-top: 16px;
+            font-size: clamp(1.4rem, 5vw, 2.2rem);
+            font-weight: 800;
+            padding: 8px 20px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.35);
+        }
+
+        .hud-stop-banner {
+            margin-top: 14px;
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: #ffffff;
+            color: #991b1b;
+            padding: 10px 24px;
+            border-radius: 12px;
+            letter-spacing: 1px;
+            display: none;
+        }
+
+        .hud-bottom {
+            width: 100%;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .hud-bottom button {
+            min-height: 54px;
+            padding: 12px 24px;
+            font-size: 1.05rem;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            color: #fff;
+        }
+
+        /* VIDEO-KONTROLLER FÖR UPPLADDAD FILM */
+        .video-controls {
+            background-color: var(--bg-panel);
+            padding: 6px 12px;
+            border-top: 1px solid var(--border);
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .video-controls input[type="range"] {
+            flex: 1;
+        }
+
+        /* NEDRE PANEL MED REP-HISTORIK & KURVA */
+        .bottom-panel {
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 8px 12px;
+            max-height: 185px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .rep-strip {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .rep-card {
+            min-width: 112px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 7px 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .rep-card.selected {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.12);
+        }
+
+        .rep-card.loss-warn {
+            border-left: 4px solid var(--yellow);
+        }
+
+        .rep-card.loss-stop {
+            border-left: 4px solid var(--red);
+            background: rgba(239, 68, 68, 0.12);
+        }
+
+        .rep-card.loss-ok {
+            border-left: 4px solid var(--green);
+        }
+
+        .chart-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            height: 82px;
+        }
+
+        canvas#curveCanvas {
+            flex: 1;
+            height: 80px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="title-group">
+        <span class="title">⚡ VBT Tracker</span>
+    </div>
+    <div class="toolbar">
+        <button id="btnCamera" class="primary">📷 Live-kamera</button>
+        <label class="file-label">
+            🎞️ Ladda upp video
+            <input type="file" id="videoUpload" accept="video/*">
+        </label>
+        <button id="btnCalibrate" title="Markera viktskivans diameter (45 cm)">📏 1. Kalibrera</button>
+        <button id="btnTrackTarget" title="Tryck på stångänden i bild">🎯 2. Välj stång</button>
+        <button id="btnToggleHud" title="Visa helskärms-HUD under setet">🖥️ HUD</button>
+    </div>
+</header>
+
+<div class="sub-bar">
+    <div id="statusMsg" class="status-msg">Starta live-kamera eller ladda upp en lyftvideo.</div>
+    <div class="settings-inline">
+        <label>Skiva (cm): <input type="number" id="plateDiameterCm" value="45" min="5" max="100"></label>
+        <label>Max tapp (%): <input type="number" id="lossThresholdPct" value="15" min="5" max="50"></label>
+        <label>Min v (m/s): <input type="number" id="minVelThresh" value="0.18" step="0.02" min="0.05" max="0.8"></label>
+        <select id="fpsMode" title="Korrigera tidsskala för iPhone Slo-Mo">
+            <option value="1">Normal (1x / 60fps)</option>
+            <option value="4">Slo-Mo 120fps (4x)</option>
+            <option value="8">Slo-Mo 240fps (8x)</option>
+        </select>
+        <button id="btnResetSet" class="danger" style="min-height: 30px; padding: 4px 9px;">Nollställ set</button>
+    </div>
+</div>
+
+<div class="viewport-container" id="viewport">
+    <div class="empty-state" id="emptyState">
+        <h3>Ingen videokälla aktiv</h3>
+        <p>Välj <strong>📷 Live-kamera</strong> på gymmet eller <strong>🎞️ Ladda upp video</strong> för analys.</p>
+    </div>
+    <video id="videoEl" playsinline muted></video>
+    <canvas id="mainCanvas"></canvas>
+</div>
+
+<div class="video-controls" id="videoControls">
+    <button id="btnPlayPause" style="min-height: 32px; padding: 4px 10px;">⏯️</button>
+    <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1">
+    <span id="videoTimeLabel" style="font-size: 0.78rem; color: var(--text-muted); font-variant-numeric: tabular-nums;">0.0s</span>
+</div>
+
+<div class="bottom-panel">
+    <div class="rep-strip" id="repStrip">
+        <div style="font-size: 0.82rem; color: var(--text-muted); padding: 6px 0;">
+            Inga repetitioner registrerade ännu. Kalibrera skivan (45 cm) och tryck på stångänden för att börja.
+        </div>
+    </div>
+    <div class="chart-row">
+        <canvas id="curveCanvas"></canvas>
+    </div>
+</div>
+
+<!-- HELSKÄRMS-HUD SOM VISAS UNDER LYFT -->
+<div id="fullscreenHud" class="hud-neutral">
+    <div class="hud-top">
+        <span id="hudBaseline">Bästa: -- m/s</span>
+        <span id="hudLiveVel">Live: 0.00 m/s</span>
+    </div>
+    <div class="hud-center">
+        <div class="hud-rep-badge" id="hudRepTitle">REDO ATT LYFTA</div>
+        <div class="hud-velocity" id="hudPeakVel">0.00</div>
+        <div class="hud-unit">m/s (Peak Velocity)</div>
+        <div class="hud-loss" id="hudLossBox">Velocity Loss: 0.0%</div>
+        <div class="hud-stop-banner" id="hudStopBanner">⚠️ ÖVER 15% TAPP – AVBRYT SETET!</div>
+    </div>
+    <div class="hud-bottom">
+        <button id="hudResetBtn">🔄 Nytt set</button>
+        <button id="hudCloseBtn">✖ Stäng HUD</button>
+    </div>
+</div>
+
+<script>
+    const video = document.getElementById('videoEl');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const curveCanvas = document.getElementById('curveCanvas');
+    const curveCtx = curveCanvas.getContext('2d');
+    const emptyState = document.getElementById('emptyState');
+    const statusMsg = document.getElementById('statusMsg');
+
+    // Offscreen canvas för snabb optisk mallmatchning (Template Matching)
+    const procCanvas = document.createElement('canvas');
+    const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
+
+    let stream = null;
+    let isLiveCamera = false;
+    let animFrameId = null;
+
+    // Interaktionsläge: 'none', 'calibrate', 'pick_target'
+    let interactionMode = 'none';
+    let calibPoints = []; // 2 punkter över viktskivans diameter
+    let pixelsPerMeter = null;
+
+    // Spårningsdata (Template Matching i luma-kanal)
+    let isTracking = false;
+    let trackPos = null; // { x, y } i videopixlar
+    let templatePatch = null; // Float32Array gråskala
+    const PATCH_RADIUS = 14; // 29x29 px mall
+    const SEARCH_RADIUS = 42; // Sökområde runt föregående position
+
+    // Tids- och rörelsehistorik
+    let lastTimestampMs = null;
+    let smoothY = null;
+    let smoothVy = 0; // m/s (positivt = uppåt i bild)
+    let barPath = []; // { x, y } för visuell lyftbana
+
+    // Repetitionsdetektering (Tillståndsmaskin)
+    // 'IDLE' -> 'ECCENTRIC' (på väg ner) -> 'CONCENTRIC' (på väg upp)
+    let repState = 'IDLE';
+    let repStartY = null;
+    let repBottomY = null;
+    let currentRepSamples = []; // { t, v, y } under koncentrisk fas
+    let completedReps = []; // { repNum, peakVel, meanVel, lossPct, curve, romCm }
+    let selectedRepIdx = -1;
+    let hudAutoOpened = false;
+
+    // Ljudgenerator (Web Audio API) för 15% Velocity Loss-larm
+    let audioCtx = null;
+    function playAlertSound(isStopAlert) {
+        try {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (isStopAlert) {
+                // Dubbel varningssignal vid >= 15% velocity loss
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(580, audioCtx.currentTime + 0.18);
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.35, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.65);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.65);
+            } else {
+                // Kort positivt pip när ett godkänt rep registreras
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(660, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            }
+        } catch (e) {}
+    }
+
+    // Starta Live-kamera (bakre kamera i 60 fps om möjligt)
+    document.getElementById('btnCamera').addEventListener('click', async () => {
+        stopCurrentVideo();
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: 'environment' },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: 60, min: 30 }
+                },
+                audio: false
+            });
+            isLiveCamera = true;
+            document.getElementById('videoControls').style.display = 'none';
+            document.getElementById('fpsMode').value = '1';
+            video.srcObject = stream;
+            await video.play();
+            onVideoReady();
+            setInteractionMode('calibrate');
+        } catch (err) {
+            statusMsg.textContent = "Kunde inte starta kameran. Kontrollera kamerabehörighet i webbläsaren.";
+        }
+    });
+
+    // Ladda upp video från kamerarullen
+    document.getElementById('videoUpload').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        stopCurrentVideo();
+        isLiveCamera = false;
+        const url = URL.createObjectURL(file);
+        video.srcObject = null;
+        video.src = url;
+        video.loop = false;
+        document.getElementById('videoControls').style.display = 'flex';
+        video.onloadedmetadata = () => {
+            document.getElementById('seekBar').max = video.duration || 100;
+            video.currentTime = 0.05;
+            onVideoReady();
+            setInteractionMode('calibrate');
+        };
+    });
+
+    function stopCurrentVideo() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+        if (animFrameId) {
+            cancelAnimationFrame(animFrameId);
+            animFrameId = null;
+        }
+        isTracking = false;
+        templatePatch = null;
+    }
+
+    function onVideoReady() {
+        emptyState.style.display = 'none';
+        canvas.width = video.videoWidth || 1280;
+        canvas.height = video.videoHeight || 720;
+        procCanvas.width = canvas.width;
+        procCanvas.height = canvas.height;
+        startProcessingLoop();
+    }
+
+    // Videokontroller för uppladdad fil
+    const seekBar = document.getElementById('seekBar');
+    document.getElementById('btnPlayPause').addEventListener('click', () => {
+        if (video.paused) {
+            lastTimestampMs = null;
+            video.play();
+        } else {
+            video.pause();
+        }
+    });
+
+    seekBar.addEventListener('input', () => {
+        video.currentTime = parseFloat(seekBar.value);
+        lastTimestampMs = null;
+    });
+
+    // Lägesknappar
+    const btnCalibrate = document.getElementById('btnCalibrate');
+    const btnTrackTarget = document.getElementById('btnTrackTarget');
+
+    function setInteractionMode(newMode) {
+        interactionMode = newMode;
+        btnCalibrate.classList.toggle('active-step', newMode === 'calibrate');
+        btnTrackTarget.classList.toggle('active-step', newMode === 'pick_target');
+
+        if (newMode === 'calibrate') {
+            calibPoints = [];
+            statusMsg.textContent = "Steg 1: Tryck på viktskivans OVANKANT och UNDERKANT (45 cm) för att kalibrera skalan.";
+        } else if (newMode === 'pick_target') {
+            statusMsg.textContent = "Steg 2: Tryck mitt på stångänden (eller viktskivans centrum) för att låsa spårningen.";
+        } else {
+            if (isTracking) {
+                statusMsg.textContent = `Spårar stång (${Math.round(pixelsPerMeter)} px/m). Redo för frontsquat!`;
+            }
+        }
+    }
+
+    btnCalibrate.addEventListener('click', () => setInteractionMode('calibrate'));
+    btnTrackTarget.addEventListener('click', () => setInteractionMode('pick_target'));
+
+    // HUD-kontroller
+    const fullscreenHud = document.getElementById('fullscreenHud');
+    document.getElementById('btnToggleHud').addEventListener('click', () => {
+        fullscreenHud.style.display = 'flex';
+    });
+    document.getElementById('hudCloseBtn').addEventListener('click', () => {
+        fullscreenHud.style.display = 'none';
+    });
+    document.getElementById('hudResetBtn').addEventListener('click', resetSet);
+    document.getElementById('btnResetSet').addEventListener('click', resetSet);
+
+    function resetSet() {
+        completedReps = [];
+        selectedRepIdx = -1;
+        repState = 'IDLE';
+        currentRepSamples = [];
+        barPath = [];
+        updateRepUI();
+        drawVelocityCurve(null);
+        updateHud(null);
+        statusMsg.textContent = "Set nollställt. Redo för rep 1.";
+    }
+
+    // Konvertera skärmklick till videopixlar
+    function getVideoCoords(e) {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const canvasRatio = canvas.width / canvas.height;
+        const rectRatio = rect.width / rect.height;
+        let renderW, renderH, offsetX, offsetY;
+
+        if (rectRatio > canvasRatio) {
+            renderH = rect.height;
+            renderW = renderH * canvasRatio;
+            offsetX = (rect.width - renderW) / 2;
+            offsetY = 0;
+        } else {
+            renderW = rect.width;
+            renderH = renderW / canvasRatio;
+            offsetX = 0;
+            offsetY = (rect.height - renderH) / 2;
+        }
+
+        const vx = ((clientX - rect.left - offsetX) / renderW) * canvas.width;
+        const vy = ((clientY - rect.top - offsetY) / renderH) * canvas.height;
+        return {
+            x: Math.max(0, Math.min(canvas.width - 1, vx)),
+            y: Math.max(0, Math.min(canvas.height - 1, vy))
+        };
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+        if (!video.videoWidth) return;
+        const pt = getVideoCoords(e);
+
+        if (interactionMode === 'calibrate') {
+            calibPoints.push(pt);
+            if (calibPoints.length === 2) {
+                const distPx = Math.hypot(calibPoints[1].x - calibPoints[0].x, calibPoints[1].y - calibPoints[0].y);
+                const diameterMeters = (parseFloat(document.getElementById('plateDiameterCm').value) || 45) / 100;
+                if (distPx > 10) {
+                    pixelsPerMeter = distPx / diameterMeters;
+                    setInteractionMode('pick_target');
+                } else {
+                    calibPoints = [];
+                }
+            }
+        } else if (interactionMode === 'pick_target' || !isTracking) {
+            if (!pixelsPerMeter) {
+                // Standarduppskattning om användaren hoppar över kalibrering
+                pixelsPerMeter = canvas.height * 0.45;
+            }
+            lockTargetAt(pt.x, pt.y);
+            setInteractionMode('none');
+
+            // Öppna helskärms-HUD automatiskt i live-läge så du ser siffrorna direkt vid ställningen
+            if (isLiveCamera && !hudAutoOpened) {
+                fullscreenHud.style.display = 'flex';
+                hudAutoOpened = true;
+            }
+        }
+    });
+
+    // Extrahera gråskalemall runt vald punkt
+    function extractPatch(imgData, cx, cy, radius) {
+        const w = imgData.width;
+        const h = imgData.height;
+        const data = imgData.data;
+        const size = radius * 2 + 1;
+        const patch = new Float32Array(size * size);
+        let idx = 0;
+
+        for (let dy = -radius; dy <= radius; dy++) {
+            const py = Math.max(0, Math.min(h - 1, Math.round(cy + dy)));
+            for (let dx = -radius; dx <= radius; dx++) {
+                const px = Math.max(0, Math.min(w - 1, Math.round(cx + dx)));
+                const pIdx = (py * w + px) * 4;
+                // Snabb luminans (gråskala)
+                patch[idx++] = data[pIdx] * 0.299 + data[pIdx + 1] * 0.587 + data[pIdx + 2] * 0.114;
+            }
+        }
+        return patch;
+    }
+
+    function lockTargetAt(x, y) {
+        procCtx.drawImage(video, 0, 0, procCanvas.width, procCanvas.height);
+        const frameData = procCtx.getImageData(0, 0, procCanvas.width, procCanvas.height);
+        trackPos = { x, y };
+        templatePatch = extractPatch(frameData, x, y, PATCH_RADIUS);
+        isTracking = true;
+        smoothY = y;
+        smoothVy = 0;
+        lastTimestampMs = null;
+        repState = 'IDLE';
+        barPath = [{ x, y }];
+    }
+
+    // Optisk spårning med Sum of Squared Differences (SSD) + Subpixel-interpolering
+    function trackNextFrame(frameData) {
+        if (!isTracking || !templatePatch || !trackPos) return;
+
+        const w = frameData.width;
+        const h = frameData.height;
+        const data = frameData.data;
+        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - SEARCH_RADIUS));
+        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + SEARCH_RADIUS));
+        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - SEARCH_RADIUS));
+        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + SEARCH_RADIUS));
+
+        let bestScore = Infinity;
+        let bestX = trackPos.x;
+        let bestY = trackPos.y;
+
+        // Grovsökning (steg 2 px för maximal 60fps-prestanda på mobil)
+        for (let sy = startY; sy <= endY; sy += 2) {
+            for (let sx = startX; sx <= endX; sx += 2) {
+                const score = computeSSD(data, w, sx, sy);
+                if (score < bestScore) {
+                    bestScore = score;
+                    bestX = sx;
+                    bestY = sy;
+                }
+            }
+        }
+
+        // Finsökning (1 px runt bästa träff) + parabolisk subpixel-förfining
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+                const sx = bestX + dx;
+                const sy = bestY + dy;
+                const s = computeSSD(data, w, sx, sy);
+                if (s < bestScore) {
+                    bestScore = s;
+                    bestX = sx;
+                    bestY = sy;
+                }
+            }
+        }
+
+        // Subpixel-justering i Y-led för mjukare hastighetskurva
+        const sTop = computeSSD(data, w, bestX, bestY - 1);
+        const sMid = bestScore;
+        const sBot = computeSSD(data, w, bestX, bestY + 1);
+        const denom = 2 * (sTop - 2 * sMid + sBot);
+        let subY = 0;
+        if (Math.abs(denom) > 1e-5) {
+            subY = Math.max(-0.5, Math.min(0.5, (sTop - sBot) / denom));
+        }
+
+        trackPos.x = bestX;
+        trackPos.y = bestY + subY;
+
+        // Adaptiv malluppdatering (15% ny bild) så belysningsförändringar under lyftet hanteras
+        const currentPatch = extractPatch(frameData, trackPos.x, trackPos.y, PATCH_RADIUS);
+        for (let i = 0; i < templatePatch.length; i++) {
+            templatePatch[i] = templatePatch[i] * 0.85 + currentPatch[i] * 0.15;
+        }
+
+        barPath.push({ x: trackPos.x, y: trackPos.y });
+        if (barPath.length > 180) barPath.shift();
+    }
+
+    function computeSSD(data, imgW, cx, cy) {
+        let ssd = 0;
+        // Sampla varannan pixel inuti patchen för extrem snabbhet i 60 Hz
+        for (let dy = -PATCH_RADIUS; dy <= PATCH_RADIUS; dy += 2) {
+            const rowOffset = (cy + dy) * imgW;
+            const patchRow = (dy + PATCH_RADIUS) * (PATCH_RADIUS * 2 + 1);
+            for (let dx = -PATCH_RADIUS; dx <= PATCH_RADIUS; dx += 2) {
+                const idx = (rowOffset + (cx + dx)) * 4;
+                const luma = data[idx] * 0.299 + data[idx + 1] * 0.587 + data[idx + 2] * 0.114;
+                const diff = luma - templatePatch[patchRow + (dx + PATCH_RADIUS)];
+                ssd += diff * diff;
+            }
+        }
+        return ssd;
+    }
+
+    // Fysik- och repetitionsanalys i realtid
+    function updateKinematics(nowMs) {
+        if (!isTracking || !trackPos || !pixelsPerMeter) return;
+
+        if (lastTimestampMs === null) {
+            lastTimestampMs = nowMs;
+            smoothY = trackPos.y;
+            return;
+        }
+
+        const slowMoFactor = parseFloat(document.getElementById('fpsMode').value) || 1;
+        const rawDt = (nowMs - lastTimestampMs) / 1000;
+        lastTimestampMs = nowMs;
+
+        // Ignorera orimliga tidshopp (t.ex. vid paus/spolning)
+        if (rawDt <= 0.002 || rawDt > 0.25) return;
+        const dt = rawDt / slowMoFactor;

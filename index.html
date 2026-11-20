@@ -407,11 +407,10 @@
         <label>Skiva (cm): <input type="number" id="plateDiameterCm" value="45" min="5" max="100"></label>
         <label>Max tapp (%): <input type="number" id="lossThresholdPct" value="15" min="5" max="50"></label>
         <label>Min v (m/s): <input type="number" id="minVelThresh" value="0.18" step="0.02" min="0.05" max="0.8"></label>
-        <select id="fpsMode" title="Välj bildfrekvens och slow-motion-faktor">
-            <option value="60_1">60 fps (1x)</option>
-            <option value="30_1">30 fps (1x)</option>
-            <option value="120_4">Slo-Mo 120fps (4x)</option>
-            <option value="240_8">Slo-Mo 240fps (8x)</option>
+        <select id="fpsMode" title="Korrigera tidsskala för iPhone Slo-Mo">
+            <option value="1">Normal (1x / 60fps)</option>
+            <option value="4">Slo-Mo 120fps (4x)</option>
+            <option value="8">Slo-Mo 240fps (8x)</option>
         </select>
         <button id="btnResetSet" class="danger" style="min-height: 30px; padding: 4px 9px;">Nollställ set</button>
     </div>
@@ -481,42 +480,29 @@
 
     // Interaktionsläge: 'none', 'calibrate', 'pick_target'
     let interactionMode = 'none';
-    let calibPoints = [];
+    let calibPoints = []; // 2 punkter över viktskivans diameter
     let pixelsPerMeter = null;
 
     // Spårningsdata (Template Matching i luma-kanal)
     let isTracking = false;
-    let trackPos = null;
-    let templatePatch = null;
+    let trackPos = null; // { x, y } i videopixlar
+    let templatePatch = null; // Float32Array gråskala
     const PATCH_RADIUS = 14; // 29x29 px mall
-
-    function getFpsConfig() {
-        const val = document.getElementById('fpsMode').value;
-        const parts = val.split('_');
-        return {
-            fps: parseInt(parts[0], 10) || 60,
-            slowMoFactor: parseFloat(parts[1]) || 1
-        };
-    }
-
-    // Större sökradie vid 30 fps eftersom stången hinner förflytta sig längre per bildruta
-    function getSearchRadius() {
-        const { fps } = getFpsConfig();
-        return fps <= 30 ? 64 : 42;
-    }
+    const SEARCH_RADIUS = 42; // Sökområde runt föregående position
 
     // Tids- och rörelsehistorik
     let lastTimestampMs = null;
     let smoothY = null;
-    let smoothVy = 0;
-    let barPath = [];
+    let smoothVy = 0; // m/s (positivt = uppåt i bild)
+    let barPath = []; // { x, y } för visuell lyftbana
 
-    // Repetitionsdetektering
+    // Repetitionsdetektering (Tillståndsmaskin)
+    // 'IDLE' -> 'ECCENTRIC' (på väg ner) -> 'CONCENTRIC' (på väg upp)
     let repState = 'IDLE';
     let repStartY = null;
     let repBottomY = null;
-    let currentRepSamples = [];
-    let completedReps = [];
+    let currentRepSamples = []; // { t, v, y } under koncentrisk fas
+    let completedReps = []; // { repNum, peakVel, meanVel, lossPct, curve, romCm }
     let selectedRepIdx = -1;
     let hudAutoOpened = false;
 
@@ -533,6 +519,7 @@
             gain.connect(audioCtx.destination);
 
             if (isStopAlert) {
+                // Dubbel varningssignal vid >= 15% velocity loss
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 osc.frequency.setValueAtTime(580, audioCtx.currentTime + 0.18);
@@ -542,6 +529,7 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.65);
             } else {
+                // Kort positivt pip när ett godkänt rep registreras
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(660, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
@@ -552,7 +540,7 @@
         } catch (e) {}
     }
 
-    // Starta Live-kamera
+    // Starta Live-kamera (bakre kamera i 60 fps om möjligt)
     document.getElementById('btnCamera').addEventListener('click', async () => {
         stopCurrentVideo();
         try {
@@ -567,7 +555,7 @@
             });
             isLiveCamera = true;
             document.getElementById('videoControls').style.display = 'none';
-            document.getElementById('fpsMode').value = '60_1';
+            document.getElementById('fpsMode').value = '1';
             video.srcObject = stream;
             await video.play();
             onVideoReady();
@@ -729,11 +717,13 @@
             }
         } else if (interactionMode === 'pick_target' || !isTracking) {
             if (!pixelsPerMeter) {
+                // Standarduppskattning om användaren hoppar över kalibrering
                 pixelsPerMeter = canvas.height * 0.45;
             }
             lockTargetAt(pt.x, pt.y);
             setInteractionMode('none');
 
+            // Öppna helskärms-HUD automatiskt i live-läge så du ser siffrorna direkt vid ställningen
             if (isLiveCamera && !hudAutoOpened) {
                 fullscreenHud.style.display = 'flex';
                 hudAutoOpened = true;
@@ -741,6 +731,7 @@
         }
     });
 
+    // Extrahera gråskalemall runt vald punkt
     function extractPatch(imgData, cx, cy, radius) {
         const w = imgData.width;
         const h = imgData.height;
@@ -754,6 +745,7 @@
             for (let dx = -radius; dx <= radius; dx++) {
                 const px = Math.max(0, Math.min(w - 1, Math.round(cx + dx)));
                 const pIdx = (py * w + px) * 4;
+                // Snabb luminans (gråskala)
                 patch[idx++] = data[pIdx] * 0.299 + data[pIdx + 1] * 0.587 + data[pIdx + 2] * 0.114;
             }
         }
@@ -773,23 +765,23 @@
         barPath = [{ x, y }];
     }
 
+    // Optisk spårning med Sum of Squared Differences (SSD) + Subpixel-interpolering
     function trackNextFrame(frameData) {
         if (!isTracking || !templatePatch || !trackPos) return;
 
         const w = frameData.width;
         const h = frameData.height;
         const data = frameData.data;
-        const searchRadius = getSearchRadius();
-
-        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - searchRadius));
-        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + searchRadius));
-        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - searchRadius));
-        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + searchRadius));
+        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - SEARCH_RADIUS));
+        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + SEARCH_RADIUS));
+        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - SEARCH_RADIUS));
+        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + SEARCH_RADIUS));
 
         let bestScore = Infinity;
         let bestX = trackPos.x;
         let bestY = trackPos.y;
 
+        // Grovsökning (steg 2 px för maximal 60fps-prestanda på mobil)
         for (let sy = startY; sy <= endY; sy += 2) {
             for (let sx = startX; sx <= endX; sx += 2) {
                 const score = computeSSD(data, w, sx, sy);
@@ -801,6 +793,7 @@
             }
         }
 
+        // Finsökning (1 px runt bästa träff) + parabolisk subpixel-förfining
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 const sx = bestX + dx;
@@ -814,6 +807,7 @@
             }
         }
 
+        // Subpixel-justering i Y-led för mjukare hastighetskurva
         const sTop = computeSSD(data, w, bestX, bestY - 1);
         const sMid = bestScore;
         const sBot = computeSSD(data, w, bestX, bestY + 1);
@@ -826,6 +820,7 @@
         trackPos.x = bestX;
         trackPos.y = bestY + subY;
 
+        // Adaptiv malluppdatering (15% ny bild) så belysningsförändringar under lyftet hanteras
         const currentPatch = extractPatch(frameData, trackPos.x, trackPos.y, PATCH_RADIUS);
         for (let i = 0; i < templatePatch.length; i++) {
             templatePatch[i] = templatePatch[i] * 0.85 + currentPatch[i] * 0.15;
@@ -837,6 +832,7 @@
 
     function computeSSD(data, imgW, cx, cy) {
         let ssd = 0;
+        // Sampla varannan pixel inuti patchen för extrem snabbhet i 60 Hz
         for (let dy = -PATCH_RADIUS; dy <= PATCH_RADIUS; dy += 2) {
             const rowOffset = (cy + dy) * imgW;
             const patchRow = (dy + PATCH_RADIUS) * (PATCH_RADIUS * 2 + 1);
@@ -850,6 +846,7 @@
         return ssd;
     }
 
+    // Fysik- och repetitionsanalys i realtid
     function updateKinematics(nowMs) {
         if (!isTracking || !trackPos || !pixelsPerMeter) return;
 
@@ -859,28 +856,31 @@
             return;
         }
 
-        const { fps, slowMoFactor } = getFpsConfig();
+        const slowMoFactor = parseFloat(document.getElementById('fpsMode').value) || 1;
         const rawDt = (nowMs - lastTimestampMs) / 1000;
         lastTimestampMs = nowMs;
 
+        // Ignorera orimliga tidshopp (t.ex. vid paus/spolning)
         if (rawDt <= 0.002 || rawDt > 0.25) return;
         const dt = rawDt / slowMoFactor;
 
-        // Anpassa filtrering något vid 30 fps så att kurvan förblir responsiv utan att släpa efter
-        const alphaPos = fps <= 30 ? 0.55 : 0.45;
+        // Exponentiellt lågpassfilter på position för att eliminera kamerabrus
+        const alphaPos = 0.45;
         const prevSmoothY = smoothY;
         smoothY = alphaPos * trackPos.y + (1 - alphaPos) * smoothY;
 
+        // Vertikal hastighet i m/s (positiv = uppåt)
         const instantVy = ((prevSmoothY - smoothY) / pixelsPerMeter) / dt;
-        const alphaVel = fps <= 30 ? 0.5 : 0.4;
-        smoothVy = alphaVel * instantVy + (1 - alphaVel) * smoothVy;
+        smoothVy = 0.4 * instantVy + 0.6 * smoothVy;
 
         document.getElementById('hudLiveVel').textContent = `Live: ${Math.max(0, smoothVy).toFixed(2)} m/s`;
 
         const minVelThresh = parseFloat(document.getElementById('minVelThresh').value) || 0.18;
-        const minRomMeters = 0.22;
+        const minRomMeters = 0.22; // Minst 22 cm rörelse för att räknas som ett riktigt lyft (filtrerar bort walkout)
 
+        // Tillståndsmaskin för Frontsquat / Knäböj / Bänkpress
         if (repState === 'IDLE') {
+            // Starta excentrisk fas när stången rör sig nedåt snabbare än 0.15 m/s
             if (smoothVy < -0.15) {
                 repState = 'ECCENTRIC';
                 repStartY = smoothY;
@@ -888,14 +888,16 @@
             }
         } else if (repState === 'ECCENTRIC') {
             if (smoothY > repBottomY) {
-                repBottomY = smoothY;
+                repBottomY = smoothY; // Följ stången ner till vändpunkten
             }
             const eccentricDepth = (repBottomY - repStartY) / pixelsPerMeter;
 
+            // Vändpunkt nådd -> stången vänder uppåt över hastighetströskeln
             if (smoothVy > minVelThresh && eccentricDepth >= minRomMeters) {
                 repState = 'CONCENTRIC';
                 currentRepSamples = [{ t: 0, v: smoothVy, y: smoothY }];
             } else if (Math.abs(smoothVy) < 0.04 && eccentricDepth < minRomMeters) {
+                // Falsk start (t.ex. liten knäböjning vid avlyft från rack)
                 repState = 'IDLE';
             }
         } else if (repState === 'CONCENTRIC') {
@@ -906,11 +908,13 @@
                 y: smoothY
             });
 
+            // Utlåsning i toppen när hastigheten sjunker nära 0 efter att ha lyft minst minRomMeters
             const concentricHeight = (repBottomY - smoothY) / pixelsPerMeter;
             if (smoothVy <= 0.06 && concentricHeight >= minRomMeters) {
                 finalizeRep();
                 repState = 'IDLE';
             } else if (smoothVy < -0.15) {
+                // Avbrutet lyft
                 repState = 'ECCENTRIC';
                 repStartY = smoothY;
                 repBottomY = smoothY;
@@ -931,6 +935,7 @@
         const meanVel = sumVel / currentRepSamples.length;
 
         const repNum = completedReps.length + 1;
+        // Hitta setets högsta Peak Velocity (vanligtvis rep 1 eller 2)
         const prevMax = completedReps.reduce((max, r) => Math.max(max, r.peakVel), 0);
         const setBaseline = Math.max(prevMax, peakVel);
 
@@ -943,6 +948,7 @@
         };
         completedReps.push(repObj);
 
+        // Räkna om Velocity Loss (%) för alla reps mot setets högsta hastighet
         completedReps.forEach(r => {
             r.lossPct = setBaseline > 0 ? Math.max(0, ((setBaseline - r.peakVel) / setBaseline) * 100) : 0;
         });
@@ -1029,6 +1035,7 @@
         drawVelocityCurve(completedReps[idx]);
     };
 
+    // Rita hastighetskurvan (m/s över tid) för valt rep
     function drawVelocityCurve(rep) {
         const rect = curveCanvas.getBoundingClientRect();
         curveCanvas.width = rect.width || 320;
@@ -1049,6 +1056,7 @@
         const maxV = Math.max(rep.peakVel * 1.15, 0.5);
         const pad = 12;
 
+        // Rutnätslinje för Peak Velocity
         const peakY = h - pad - (rep.peakVel / maxV) * (h - pad * 2);
         curveCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
         curveCtx.setLineDash([4, 4]);
@@ -1058,6 +1066,7 @@
         curveCtx.stroke();
         curveCtx.setLineDash([]);
 
+        // Själva hastighetskurvan
         curveCtx.beginPath();
         samples.forEach((s, i) => {
             const x = pad + (s.t / maxT) * (w - pad * 2);
@@ -1069,11 +1078,13 @@
         curveCtx.lineWidth = 2.5;
         curveCtx.stroke();
 
+        // Textinfo i hörnet av kurvan
         curveCtx.fillStyle = '#f8fafc';
         curveCtx.font = 'bold 11px -apple-system, sans-serif';
         curveCtx.fillText(`Rep ${rep.repNum} | Peak: ${rep.peakVel.toFixed(2)} m/s | Mean: ${rep.meanVel.toFixed(2)} m/s | Tid: ${maxT.toFixed(2)}s`, pad, 14);
     }
 
+    // Huvudloop för video-rendering och spårning
     function startProcessingLoop() {
         function step(now) {
             if (video.readyState >= 2) {
@@ -1098,6 +1109,7 @@
     function renderViewport() {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+        // Rita kalibreringslinje för viktskivan
         if (calibPoints.length > 0) {
             ctx.save();
             ctx.strokeStyle = '#a855f7';
@@ -1117,6 +1129,7 @@
             ctx.restore();
         }
 
+        // Rita stångens lyftbana (Bar Path)
         if (barPath.length > 1) {
             ctx.save();
             ctx.beginPath();
@@ -1130,6 +1143,7 @@
             ctx.restore();
         }
 
+        // Rita sikte på den spårade stångänden
         if (isTracking && trackPos) {
             ctx.save();
             const r = PATCH_RADIUS;

@@ -14,6 +14,7 @@
             --green: #10b981;
             --yellow: #f59e0b;
             --red: #ef4444;
+            --purple: #a855f7;
             --border: #26334d;
         }
 
@@ -38,50 +39,44 @@
 
         header {
             background-color: var(--bg-panel);
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            z-index: 10;
-        }
-
-        .title-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            gap: 6px;
+            z-index: 20;
         }
 
         .title {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 800;
-            letter-spacing: 0.4px;
             color: var(--accent);
+            white-space: nowrap;
         }
 
-        .toolbar {
+        .header-actions {
             display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+            gap: 5px;
             align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         button, .file-label, select {
             background-color: #1e293b;
             color: var(--text-main);
             border: 1px solid #334155;
-            min-height: 38px;
-            padding: 6px 11px;
+            min-height: 36px;
+            padding: 5px 10px;
             border-radius: 8px;
-            font-size: 0.82rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
             transition: transform 0.1s ease, background-color 0.15s ease;
         }
 
@@ -96,66 +91,81 @@
             font-weight: 700;
         }
 
-        button.success {
-            background-color: var(--green);
-            color: #090d16;
-            border-color: var(--green);
-            font-weight: 700;
-        }
-
         button.danger {
             background-color: #7f1d1d;
             border-color: #991b1b;
-        }
-
-        button.active-step {
-            outline: 2px solid var(--accent);
-            background-color: #26334d;
+            color: #ffffff;
         }
 
         input[type="file"] {
             display: none;
         }
 
-        .sub-bar {
-            background-color: #0f1626;
-            padding: 7px 12px;
+        /* INSTRUKTIONSBANNER */
+        .guide-banner {
+            background: linear-gradient(90deg, #162238 0%, #1e2d4a 100%);
             border-bottom: 1px solid var(--border);
+            padding: 6px 10px;
             display: flex;
+            align-items: center;
             justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            z-index: 10;
+            gap: 6px;
+            z-index: 15;
         }
 
-        .status-msg {
-            font-size: 0.82rem;
-            font-weight: 600;
+        .guide-text {
+            font-size: 0.8rem;
+            line-height: 1.3;
+            color: #e2e8f0;
+            flex: 1;
+        }
+
+        .guide-text strong {
             color: var(--accent);
-            flex: 1 1 240px;
         }
 
-        .settings-inline {
+        .guide-btns {
+            display: flex;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+
+        /* HOPFÄLLBAR INSTÄLLNINGSPANEL */
+        .settings-drawer {
+            background-color: #0f1626;
+            border-bottom: 1px solid var(--border);
+            padding: 8px 12px;
+            display: none;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.8rem;
+            z-index: 15;
+        }
+
+        .settings-drawer.open {
+            display: flex;
+        }
+
+        .settings-drawer label {
             display: flex;
             align-items: center;
-            gap: 6px;
-            flex-wrap: wrap;
-            font-size: 0.78rem;
+            gap: 5px;
             color: var(--text-muted);
         }
 
-        .settings-inline input[type="number"] {
+        .settings-drawer input[type="number"] {
             width: 56px;
             background: #1e293b;
             border: 1px solid #334155;
             color: #fff;
-            padding: 5px 6px;
+            padding: 5px;
             border-radius: 6px;
             font-weight: 700;
             text-align: center;
         }
 
+        /* MAXIMERAD VIDEOVY */
         .viewport-container {
             flex: 1;
             position: relative;
@@ -174,24 +184,155 @@
         canvas#mainCanvas {
             width: 100%;
             height: 100%;
-            object-fit: contain;
             display: block;
+        }
+
+        .floating-tools {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 12;
+        }
+
+        .tool-cluster {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            pointer-events: auto;
+        }
+
+        .floating-btn {
+            background: rgba(15, 23, 42, 0.88);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            color: #f8fafc;
+            min-height: 36px;
+            padding: 5px 9px;
+            border-radius: 9px;
+            font-size: 0.76rem;
+            font-weight: 700;
+        }
+
+        .floating-btn.active {
+            background: rgba(56, 189, 248, 0.94);
+            color: #090d16;
+            border-color: #38bdf8;
+        }
+
+        .floating-btn.active-purple {
+            background: rgba(168, 85, 247, 0.94);
+            color: #ffffff;
+            border-color: #c084fc;
         }
 
         .empty-state {
             position: absolute;
             text-align: center;
             color: var(--text-muted);
-            padding: 20px;
+            padding: 24px;
+            max-width: 340px;
             pointer-events: none;
         }
 
         .empty-state h3 {
             color: var(--text-main);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
         }
 
-        /* HELSKÄRMS-HUD UNDER SET */
+        /* VIDEOSPELARE & SPOLNING */
+        .video-controls {
+            background-color: var(--bg-panel);
+            padding: 7px 10px;
+            border-top: 1px solid var(--border);
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 15;
+        }
+
+        .scrubber-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .scrubber-row input[type="range"] {
+            flex: 1;
+            height: 32px;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .transport-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .transport-row button {
+            flex: 1;
+            min-height: 38px;
+            padding: 4px 6px;
+            font-size: 0.78rem;
+        }
+
+        /* NEDRE RESULTATPANEL */
+        .bottom-panel {
+            background-color: var(--bg-panel);
+            border-top: 1px solid var(--border);
+            padding: 6px 10px;
+            max-height: 135px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 15;
+        }
+
+        .rep-strip {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .rep-card {
+            min-width: 96px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 5px 8px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .rep-card.selected {
+            border-color: var(--accent);
+            background: rgba(56, 189, 248, 0.14);
+        }
+
+        .rep-card.loss-warn { border-left: 4px solid var(--yellow); }
+        .rep-card.loss-stop { border-left: 4px solid var(--red); background: rgba(239, 68, 68, 0.14); }
+        .rep-card.loss-ok { border-left: 4px solid var(--green); }
+
+        canvas#curveCanvas {
+            width: 100%;
+            height: 58px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        /* HELSKÄRMS-HUD UNDER LYFT */
         #fullscreenHud {
             position: fixed;
             inset: 0;
@@ -205,26 +346,17 @@
             transition: background-color 0.2s ease;
         }
 
-        #fullscreenHud.hud-green {
-            background-color: rgba(6, 78, 59, 0.94);
-        }
-
-        #fullscreenHud.hud-yellow {
-            background-color: rgba(120, 53, 15, 0.95);
-        }
-
+        #fullscreenHud.hud-green { background-color: rgba(6, 78, 59, 0.95); }
+        #fullscreenHud.hud-yellow { background-color: rgba(120, 53, 15, 0.96); }
         #fullscreenHud.hud-red {
-            background-color: rgba(127, 29, 29, 0.97);
+            background-color: rgba(127, 29, 29, 0.98);
             animation: pulseAlert 0.6s infinite alternate;
         }
-
-        #fullscreenHud.hud-neutral {
-            background-color: rgba(9, 13, 22, 0.88);
-        }
+        #fullscreenHud.hud-neutral { background-color: rgba(9, 13, 22, 0.92); }
 
         @keyframes pulseAlert {
-            from { background-color: rgba(153, 27, 27, 0.95); }
-            to { background-color: rgba(220, 38, 38, 0.98); }
+            from { background-color: rgba(153, 27, 27, 0.96); }
+            to { background-color: rgba(220, 38, 38, 0.99); }
         }
 
         .hud-top {
@@ -232,7 +364,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             font-weight: 700;
         }
 
@@ -245,16 +377,15 @@
         }
 
         .hud-rep-badge {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 2px;
             opacity: 0.9;
-            margin-bottom: 4px;
         }
 
         .hud-velocity {
-            font-size: clamp(5.5rem, 24vw, 11rem);
+            font-size: clamp(5.5rem, 25vw, 11rem);
             font-weight: 900;
             line-height: 0.95;
             font-variant-numeric: tabular-nums;
@@ -262,30 +393,29 @@
         }
 
         .hud-unit {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 700;
             opacity: 0.85;
             margin-top: 4px;
         }
 
         .hud-loss {
-            margin-top: 16px;
-            font-size: clamp(1.4rem, 5vw, 2.2rem);
+            margin-top: 14px;
+            font-size: clamp(1.3rem, 5vw, 2rem);
             font-weight: 800;
-            padding: 8px 20px;
+            padding: 8px 18px;
             border-radius: 12px;
             background: rgba(0, 0, 0, 0.35);
         }
 
         .hud-stop-banner {
             margin-top: 14px;
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 900;
             background: #ffffff;
             color: #991b1b;
-            padding: 10px 24px;
+            padding: 10px 22px;
             border-radius: 12px;
-            letter-spacing: 1px;
             display: none;
         }
 
@@ -297,152 +427,101 @@
         }
 
         .hud-bottom button {
-            min-height: 54px;
-            padding: 12px 24px;
-            font-size: 1.05rem;
+            min-height: 52px;
+            padding: 12px 22px;
+            font-size: 1rem;
             border-radius: 12px;
-            background: rgba(15, 23, 42, 0.85);
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            background: rgba(15, 23, 42, 0.88);
+            border: 2px solid rgba(255, 255, 255, 0.45);
             color: #fff;
-        }
-
-        /* VIDEO-KONTROLLER FÖR UPPLADDAD FILM */
-        .video-controls {
-            background-color: var(--bg-panel);
-            padding: 6px 12px;
-            border-top: 1px solid var(--border);
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .video-controls input[type="range"] {
-            flex: 1;
-        }
-
-        /* NEDRE PANEL MED REP-HISTORIK & KURVA */
-        .bottom-panel {
-            background-color: var(--bg-panel);
-            border-top: 1px solid var(--border);
-            padding: 8px 12px;
-            max-height: 185px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .rep-strip {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-        }
-
-        .rep-card {
-            min-width: 112px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 7px 10px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        .rep-card.selected {
-            border-color: var(--accent);
-            background: rgba(56, 189, 248, 0.12);
-        }
-
-        .rep-card.loss-warn {
-            border-left: 4px solid var(--yellow);
-        }
-
-        .rep-card.loss-stop {
-            border-left: 4px solid var(--red);
-            background: rgba(239, 68, 68, 0.12);
-        }
-
-        .rep-card.loss-ok {
-            border-left: 4px solid var(--green);
-        }
-
-        .chart-row {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            height: 82px;
-        }
-
-        canvas#curveCanvas {
-            flex: 1;
-            height: 80px;
-            background: var(--bg-dark);
-            border: 1px solid var(--border);
-            border-radius: 8px;
         }
     </style>
 </head>
 <body>
 
 <header>
-    <div class="title-group">
-        <span class="title">⚡ VBT Tracker</span>
-    </div>
-    <div class="toolbar">
-        <button id="btnCamera" class="primary">📷 Live-kamera</button>
+    <span class="title">⚡ VBT</span>
+    <div class="header-actions">
+        <button id="btnCamera" class="primary">📷 Kamera</button>
         <label class="file-label">
-            🎞️ Ladda upp video
-            <input type="file" id="videoUpload" accept="video/*">
+            🎞️ Ladda upp
+            <input type="file" id="videoUpload" accept="video/*,video/mp4,video/quicktime">
         </label>
-        <button id="btnCalibrate" title="Markera viktskivans diameter (45 cm)">📏 1. Kalibrera</button>
-        <button id="btnTrackTarget" title="Tryck på stångänden i bild">🎯 2. Välj stång</button>
-        <button id="btnToggleHud" title="Visa helskärms-HUD under setet">🖥️ HUD</button>
+        <select id="fpsMode" title="Bildfrekvens">
+            <option value="60_1">60 fps</option>
+            <option value="30_1">30 fps</option>
+            <option value="120_4">120 Slo-Mo</option>
+            <option value="240_8">240 Slo-Mo</option>
+        </select>
+        <button id="btnToggleHud" title="Visa helskärms-HUD">🖥️ HUD</button>
+        <button id="btnSettings" title="Inställningar">⚙️</button>
     </div>
 </header>
 
-<div class="sub-bar">
-    <div id="statusMsg" class="status-msg">Starta live-kamera eller ladda upp en lyftvideo.</div>
-    <div class="settings-inline">
-        <label>Skiva (cm): <input type="number" id="plateDiameterCm" value="45" min="5" max="100"></label>
-        <label>Max tapp (%): <input type="number" id="lossThresholdPct" value="15" min="5" max="50"></label>
-        <label>Min v (m/s): <input type="number" id="minVelThresh" value="0.18" step="0.02" min="0.05" max="0.8"></label>
-        <select id="fpsMode" title="Korrigera tidsskala för iPhone Slo-Mo">
-            <option value="1">Normal (1x / 60fps)</option>
-            <option value="4">Slo-Mo 120fps (4x)</option>
-            <option value="8">Slo-Mo 240fps (8x)</option>
-        </select>
-        <button id="btnResetSet" class="danger" style="min-height: 30px; padding: 4px 9px;">Nollställ set</button>
+<div class="settings-drawer" id="settingsDrawer">
+    <label>Skiva (cm): <input type="number" id="plateDiameterCm" value="45" min="5" max="100"></label>
+    <label>Din längd (cm): <input type="number" id="bodyHeightCm" value="193" min="100" max="230"></label>
+    <label>Max tapp (%): <input type="number" id="lossThresholdPct" value="15" min="5" max="50"></label>
+    <label>Min fart (m/s): <input type="number" id="minVelThresh" value="0.18" step="0.02" min="0.05" max="0.8"></label>
+</div>
+
+<div class="guide-banner">
+    <div class="guide-text" id="guideText">
+        Välj <strong>📷 Kamera</strong> eller <strong>🎞️ Ladda upp</strong> en video för att börja.
+    </div>
+    <div class="guide-btns">
+        <button id="btnUndo" style="min-height: 34px; padding: 4px 9px;" title="Ångra senaste steg">↩️ Ångra</button>
+        <button id="btnResetAll" class="danger" style="min-height: 34px; padding: 4px 9px;" title="Nollställ allt och börja om">🔄 Återställ</button>
     </div>
 </div>
 
 <div class="viewport-container" id="viewport">
     <div class="empty-state" id="emptyState">
-        <h3>Ingen videokälla aktiv</h3>
-        <p>Välj <strong>📷 Live-kamera</strong> på gymmet eller <strong>🎞️ Ladda upp video</strong> för analys.</p>
+        <h3>Ingen video laddad</h3>
+        <p>Tryck på <strong>📷 Kamera</strong> för live-mätning eller <strong>🎞️ Ladda upp</strong> för att analysera en sparad video (30/60/240 fps).</p>
     </div>
-    <video id="videoEl" playsinline muted></video>
+
+    <div class="floating-tools" id="floatingTools" style="display: none;">
+        <div class="tool-cluster">
+            <button id="btnCalibPlate" class="floating-btn" title="Kalibrera med viktskivan (45 cm)">📏 Skiva (45)</button>
+            <button id="btnCalibBody" class="floating-btn" title="Kalibrera med din längd (193 cm)">🧍 Längd (193)</button>
+            <button id="btnTrackTarget" class="floating-btn" title="Välj stångände att spåra">🎯 Stång</button>
+        </div>
+        <div class="tool-cluster">
+            <button id="btnPanZoom" class="floating-btn" title="Zooma och flytta bilden">🔍 Zoom</button>
+            <button id="btnRotate" class="floating-btn" title="Rotera videon 90 grader">🔄 90°</button>
+            <button id="btnResetView" class="floating-btn" title="Återställ zoom">1:1</button>
+        </div>
+    </div>
+
+    <video id="videoEl" playsinline webkit-playsinline muted preload="auto"></video>
     <canvas id="mainCanvas"></canvas>
 </div>
 
 <div class="video-controls" id="videoControls">
-    <button id="btnPlayPause" style="min-height: 32px; padding: 4px 10px;">⏯️</button>
-    <input type="range" id="seekBar" value="0" min="0" max="100" step="0.1">
-    <span id="videoTimeLabel" style="font-size: 0.78rem; color: var(--text-muted); font-variant-numeric: tabular-nums;">0.0s</span>
+    <div class="scrubber-row">
+        <input type="range" id="seekBar" value="0" min="0" max="100" step="0.01">
+        <span id="videoTimeLabel" style="font-size: 0.8rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; min-width: 78px; text-align: right;">0.0 / 0.0s</span>
+    </div>
+    <div class="transport-row">
+        <button id="btnSkipBack" title="Spola bakåt 1 sekund">⏪ -1s</button>
+        <button id="btnStepBack" title="Backa 1 bildruta">◀| Ruta</button>
+        <button id="btnPlayPause" class="primary" style="flex: 1.4;">▶️ Spela</button>
+        <button id="btnStepFwd" title="Framåt 1 bildruta">Ruta |▶</button>
+        <button id="btnSkipFwd" title="Spola framåt 1 sekund">⏩ +1s</button>
+    </div>
 </div>
 
 <div class="bottom-panel">
     <div class="rep-strip" id="repStrip">
-        <div style="font-size: 0.82rem; color: var(--text-muted); padding: 6px 0;">
-            Inga repetitioner registrerade ännu. Kalibrera skivan (45 cm) och tryck på stångänden för att börja.
+        <div style="font-size: 0.8rem; color: var(--text-muted); padding: 4px 0;">
+            Repetitioner och hastighetstapp visas här.
         </div>
     </div>
-    <div class="chart-row">
-        <canvas id="curveCanvas"></canvas>
-    </div>
+    <canvas id="curveCanvas"></canvas>
 </div>
 
-<!-- HELSKÄRMS-HUD SOM VISAS UNDER LYFT -->
+<!-- HELSKÄRMS-HUD UNDER LYFT -->
 <div id="fullscreenHud" class="hud-neutral">
     <div class="hud-top">
         <span id="hudBaseline">Bästa: -- m/s</span>
@@ -457,7 +536,7 @@
     </div>
     <div class="hud-bottom">
         <button id="hudResetBtn">🔄 Nytt set</button>
-        <button id="hudCloseBtn">✖ Stäng HUD</button>
+        <button id="hudCloseBtn">✖ Visa video</button>
     </div>
 </div>
 
@@ -465,12 +544,16 @@
     const video = document.getElementById('videoEl');
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const viewport = document.getElementById('viewport');
     const curveCanvas = document.getElementById('curveCanvas');
     const curveCtx = curveCanvas.getContext('2d');
     const emptyState = document.getElementById('emptyState');
-    const statusMsg = document.getElementById('statusMsg');
+    const guideText = document.getElementById('guideText');
+    const floatingTools = document.getElementById('floatingTools');
+    const btnPlayPause = document.getElementById('btnPlayPause');
+    const seekBar = document.getElementById('seekBar');
+    const videoTimeLabel = document.getElementById('videoTimeLabel');
 
-    // Offscreen canvas för snabb optisk mallmatchning (Template Matching)
     const procCanvas = document.createElement('canvas');
     const procCtx = procCanvas.getContext('2d', { willReadFrequently: true });
 
@@ -478,35 +561,107 @@
     let isLiveCamera = false;
     let animFrameId = null;
 
-    // Interaktionsläge: 'none', 'calibrate', 'pick_target'
-    let interactionMode = 'none';
-    let calibPoints = []; // 2 punkter över viktskivans diameter
+    // Vy-transformering
+    let viewScale = 1;
+    let viewOffsetX = 0;
+    let viewOffsetY = 0;
+    let rotationDeg = 0;
+
+    // Touch- och musgester
+    let isDraggingView = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let initialPinchDist = null;
+    let initialPinchScale = 1;
+    let pinchMidX = 0;
+    let pinchMidY = 0;
+
+    // Förstoringsglas & håll-och-släpp-kalibrering
+    let activeCalibDragPoint = null; // Punkt i videopixlar som just nu hålls/dras med lupp
+    let isTouchPlacement = false;
+    const TOUCH_LIFT_PX = 42; // Lyfter siktet strax ovanför fingertoppen på touchskärm så fingret inte skymmer
+
+    // Kalibreringstyp: 'plate' (45 cm) eller 'body' (193 cm)
+    let calibType = 'plate';
+    let interactionMode = 'calibrate'; // 'calibrate', 'pick_target', 'pan_zoom', 'ready'
+    let calibPoints = [];
     let pixelsPerMeter = null;
 
-    // Spårningsdata (Template Matching i luma-kanal)
+    // Spårningsdata
     let isTracking = false;
-    let trackPos = null; // { x, y } i videopixlar
-    let templatePatch = null; // Float32Array gråskala
-    const PATCH_RADIUS = 14; // 29x29 px mall
-    const SEARCH_RADIUS = 42; // Sökområde runt föregående position
+    let trackPos = null;
+    let templatePatch = null;
+    const PATCH_RADIUS = 14;
 
-    // Tids- och rörelsehistorik
+    // Rörelse- och repetitionsdata
     let lastTimestampMs = null;
     let smoothY = null;
-    let smoothVy = 0; // m/s (positivt = uppåt i bild)
-    let barPath = []; // { x, y } för visuell lyftbana
-
-    // Repetitionsdetektering (Tillståndsmaskin)
-    // 'IDLE' -> 'ECCENTRIC' (på väg ner) -> 'CONCENTRIC' (på väg upp)
+    let smoothVy = 0;
+    let barPath = [];
     let repState = 'IDLE';
     let repStartY = null;
     let repBottomY = null;
-    let currentRepSamples = []; // { t, v, y } under koncentrisk fas
-    let completedReps = []; // { repNum, peakVel, meanVel, lossPct, curve, romCm }
+    let currentRepSamples = [];
+    let completedReps = [];
     let selectedRepIdx = -1;
     let hudAutoOpened = false;
 
-    // Ljudgenerator (Web Audio API) för 15% Velocity Loss-larm
+    function resizeDisplayCanvas() {
+        canvas.width = viewport.clientWidth;
+        canvas.height = viewport.clientHeight;
+    }
+    window.addEventListener('resize', () => {
+        resizeDisplayCanvas();
+        if (video.videoWidth) fitVideoToViewport();
+    });
+    resizeDisplayCanvas();
+
+    document.getElementById('btnSettings').addEventListener('click', () => {
+        document.getElementById('settingsDrawer').classList.toggle('open');
+    });
+
+    // Uppdatera knapptexter om användaren ändrar cm under inställningar
+    document.getElementById('plateDiameterCm').addEventListener('input', (e) => {
+        document.getElementById('btnCalibPlate').textContent = `📏 Skiva (${e.target.value || 45})`;
+        if (calibType === 'plate' && calibPoints.length === 2) recalculateScaleFromPoints();
+        updateGuideBanner();
+    });
+    document.getElementById('bodyHeightCm').addEventListener('input', (e) => {
+        document.getElementById('btnCalibBody').textContent = `🧍 Längd (${e.target.value || 193})`;
+        if (calibType === 'body' && calibPoints.length === 2) recalculateScaleFromPoints();
+        updateGuideBanner();
+    });
+
+    function getReferenceCm() {
+        if (calibType === 'body') {
+            return parseFloat(document.getElementById('bodyHeightCm').value) || 193;
+        }
+        return parseFloat(document.getElementById('plateDiameterCm').value) || 45;
+    }
+
+    function recalculateScaleFromPoints() {
+        if (calibPoints.length < 2) return;
+        const distPx = Math.hypot(calibPoints[1].x - calibPoints[0].x, calibPoints[1].y - calibPoints[0].y);
+        const refMeters = getReferenceCm() / 100;
+        if (distPx > 8) {
+            pixelsPerMeter = distPx / refMeters;
+        }
+    }
+
+    function getFpsConfig() {
+        const val = document.getElementById('fpsMode').value;
+        const parts = val.split('_');
+        return {
+            fps: parseInt(parts[0], 10) || 60,
+            slowMoFactor: parseFloat(parts[1]) || 1
+        };
+    }
+
+    function getSearchRadius() {
+        const { fps } = getFpsConfig();
+        return fps <= 30 ? 64 : 42;
+    }
+
     let audioCtx = null;
     function playAlertSound(isStopAlert) {
         try {
@@ -519,7 +674,6 @@
             gain.connect(audioCtx.destination);
 
             if (isStopAlert) {
-                // Dubbel varningssignal vid >= 15% velocity loss
                 osc.type = 'sawtooth';
                 osc.frequency.setValueAtTime(880, audioCtx.currentTime);
                 osc.frequency.setValueAtTime(580, audioCtx.currentTime + 0.18);
@@ -529,7 +683,6 @@
                 osc.start();
                 osc.stop(audioCtx.currentTime + 0.65);
             } else {
-                // Kort positivt pip när ett godkänt rep registreras
                 osc.type = 'sine';
                 osc.frequency.setValueAtTime(660, audioCtx.currentTime);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
@@ -540,7 +693,7 @@
         } catch (e) {}
     }
 
-    // Starta Live-kamera (bakre kamera i 60 fps om möjligt)
+    // STARTA LIVE-KAMERA
     document.getElementById('btnCamera').addEventListener('click', async () => {
         stopCurrentVideo();
         try {
@@ -555,34 +708,71 @@
             });
             isLiveCamera = true;
             document.getElementById('videoControls').style.display = 'none';
-            document.getElementById('fpsMode').value = '1';
+            document.getElementById('fpsMode').value = '60_1';
             video.srcObject = stream;
             await video.play();
             onVideoReady();
-            setInteractionMode('calibrate');
         } catch (err) {
-            statusMsg.textContent = "Kunde inte starta kameran. Kontrollera kamerabehörighet i webbläsaren.";
+            guideText.innerHTML = "<strong>Kamerafel:</strong> Tillåt kameraåtkomst i Safari/webbläsaren och försök igen.";
         }
     });
 
-    // Ladda upp video från kamerarullen
+    // LADDA UPP VIDEO
     document.getElementById('videoUpload').addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
         stopCurrentVideo();
         isLiveCamera = false;
+
         const url = URL.createObjectURL(file);
         video.srcObject = null;
         video.src = url;
         video.loop = false;
+        video.load();
         document.getElementById('videoControls').style.display = 'flex';
+
         video.onloadedmetadata = () => {
-            document.getElementById('seekBar').max = video.duration || 100;
-            video.currentTime = 0.05;
+            seekBar.max = video.duration || 100;
+            video.currentTime = 0.01;
+            updateTimeDisplay();
+        };
+
+        video.onloadeddata = () => {
             onVideoReady();
-            setInteractionMode('calibrate');
         };
     });
+
+    video.addEventListener('play', () => {
+        btnPlayPause.textContent = '⏸️ Pausa';
+    });
+
+    video.addEventListener('pause', () => {
+        btnPlayPause.textContent = '▶️ Spela';
+        updateGuideBanner();
+    });
+
+    video.addEventListener('ended', () => {
+        btnPlayPause.textContent = '▶️ Spela';
+        updateGuideBanner();
+    });
+
+    function updateTimeDisplay() {
+        const cur = video.currentTime || 0;
+        const dur = video.duration || 0;
+        seekBar.value = cur;
+        videoTimeLabel.textContent = `${cur.toFixed(1)} / ${dur.toFixed(1)}s`;
+    }
+
+    function seekTo(newTime) {
+        if (!video.duration) return;
+        video.pause();
+        const clamped = Math.max(0, Math.min(video.duration, newTime));
+        video.currentTime = clamped;
+        lastTimestampMs = null;
+        repState = 'IDLE';
+        currentRepSamples = [];
+        updateTimeDisplay();
+    }
 
     function stopCurrentVideo() {
         if (stream) {
@@ -593,23 +783,62 @@
             cancelAnimationFrame(animFrameId);
             animFrameId = null;
         }
+        clearAllCalibrationAndTracking();
+    }
+
+    function clearAllCalibrationAndTracking() {
         isTracking = false;
+        trackPos = null;
         templatePatch = null;
+        calibPoints = [];
+        activeCalibDragPoint = null;
+        pixelsPerMeter = null;
+        barPath = [];
+        repState = 'IDLE';
+        currentRepSamples = [];
+        completedReps = [];
+        selectedRepIdx = -1;
+        lastTimestampMs = null;
+        smoothY = null;
+        smoothVy = 0;
+        updateRepUI();
+        drawVelocityCurve(null);
+        updateHud(null);
     }
 
     function onVideoReady() {
         emptyState.style.display = 'none';
-        canvas.width = video.videoWidth || 1280;
-        canvas.height = video.videoHeight || 720;
-        procCanvas.width = canvas.width;
-        procCanvas.height = canvas.height;
+        floatingTools.style.display = 'flex';
+        procCanvas.width = video.videoWidth || 1280;
+        procCanvas.height = video.videoHeight || 720;
+        rotationDeg = 0;
+        fitVideoToViewport();
+        setInteractionMode('calibrate');
         startProcessingLoop();
     }
 
-    // Videokontroller för uppladdad fil
-    const seekBar = document.getElementById('seekBar');
-    document.getElementById('btnPlayPause').addEventListener('click', () => {
+    function fitVideoToViewport() {
+        if (!video.videoWidth) return;
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const isRotated = (rotationDeg % 180) !== 0;
+        const effW = isRotated ? vh : vw;
+        const effH = isRotated ? vw : vh;
+
+        const scaleX = canvas.width / effW;
+        const scaleY = canvas.height / effH;
+        viewScale = Math.min(scaleX, scaleY);
+        viewOffsetX = canvas.width / 2;
+        viewOffsetY = canvas.height / 2;
+    }
+
+    // VIDEOKONTROLLER
+    btnPlayPause.addEventListener('click', () => {
+        if (!video.src && !video.srcObject) return;
         if (video.paused) {
+            if (video.ended || video.currentTime >= video.duration - 0.05) {
+                video.currentTime = 0;
+            }
             lastTimestampMs = null;
             video.play();
         } else {
@@ -617,34 +846,380 @@
         }
     });
 
-    seekBar.addEventListener('input', () => {
-        video.currentTime = parseFloat(seekBar.value);
-        lastTimestampMs = null;
+    seekBar.addEventListener('input', () => seekTo(parseFloat(seekBar.value)));
+    document.getElementById('btnSkipBack').addEventListener('click', () => seekTo((video.currentTime || 0) - 1.0));
+    document.getElementById('btnSkipFwd').addEventListener('click', () => seekTo((video.currentTime || 0) + 1.0));
+    document.getElementById('btnStepBack').addEventListener('click', () => {
+        const { fps } = getFpsConfig();
+        seekTo((video.currentTime || 0) - (1 / fps));
+    });
+    document.getElementById('btnStepFwd').addEventListener('click', () => {
+        const { fps } = getFpsConfig();
+        seekTo((video.currentTime || 0) + (1 / fps));
     });
 
-    // Lägesknappar
-    const btnCalibrate = document.getElementById('btnCalibrate');
+    document.getElementById('btnResetAll').addEventListener('click', () => {
+        clearAllCalibrationAndTracking();
+        if (!isLiveCamera && video.duration) {
+            seekTo(0);
+        }
+        setInteractionMode('calibrate');
+    });
+
+    // VERKTYGSKNAPPAR ÖVER VIDEON
+    const btnCalibPlate = document.getElementById('btnCalibPlate');
+    const btnCalibBody = document.getElementById('btnCalibBody');
     const btnTrackTarget = document.getElementById('btnTrackTarget');
+    const btnPanZoom = document.getElementById('btnPanZoom');
 
     function setInteractionMode(newMode) {
         interactionMode = newMode;
-        btnCalibrate.classList.toggle('active-step', newMode === 'calibrate');
-        btnTrackTarget.classList.toggle('active-step', newMode === 'pick_target');
+        btnCalibPlate.classList.toggle('active-purple', newMode === 'calibrate' && calibType === 'plate');
+        btnCalibBody.classList.toggle('active-purple', newMode === 'calibrate' && calibType === 'body');
+        btnTrackTarget.classList.toggle('active', newMode === 'pick_target');
+        btnPanZoom.classList.toggle('active', newMode === 'pan_zoom');
+        updateGuideBanner();
+    }
 
-        if (newMode === 'calibrate') {
-            calibPoints = [];
-            statusMsg.textContent = "Steg 1: Tryck på viktskivans OVANKANT och UNDERKANT (45 cm) för att kalibrera skalan.";
-        } else if (newMode === 'pick_target') {
-            statusMsg.textContent = "Steg 2: Tryck mitt på stångänden (eller viktskivans centrum) för att låsa spårningen.";
+    function updateGuideBanner() {
+        const refCm = getReferenceCm();
+        if (!video.videoWidth) {
+            guideText.innerHTML = `Välj <strong>📷 Kamera</strong> eller <strong>🎞️ Ladda upp</strong> en video för att börja.`;
+            return;
+        }
+
+        if (interactionMode === 'calibrate') {
+            if (calibType === 'plate') {
+                if (calibPoints.length === 0) {
+                    guideText.innerHTML = `<strong>Skiva (${refCm} cm) 1/2:</strong> Håll fingret på viktskivans <strong>OVANKANT</strong> (använd luppen) och släpp.`;
+                } else if (calibPoints.length === 1) {
+                    guideText.innerHTML = `<strong>Skiva (${refCm} cm) 2/2:</strong> Håll fingret på viktskivans <strong>UNDERKANT</strong> och släpp.`;
+                } else {
+                    guideText.innerHTML = `<strong>Kalibrerad (${Math.round(pixelsPerMeter)} px/m):</strong> Dra i punkterna för att finjustera eller tryck på <strong>🎯 Stång</strong>.`;
+                }
+            } else {
+                if (calibPoints.length === 0) {
+                    guideText.innerHTML = `<strong>Din längd (${refCm} cm) 1/2:</strong> Håll fingret längst ner vid <strong>FOTSULAN</strong> (använd luppen) och släpp.`;
+                } else if (calibPoints.length === 1) {
+                    guideText.innerHTML = `<strong>Din längd (${refCm} cm) 2/2:</strong> Håll fingret längst upp på <strong>HJÄSSAN</strong> och släpp.`;
+                } else {
+                    guideText.innerHTML = `<strong>Kalibrerad (${Math.round(pixelsPerMeter)} px/m):</strong> Dra i punkterna för att finjustera eller tryck på <strong>🎯 Stång</strong>.`;
+                }
+            }
+        } else if (interactionMode === 'pick_target') {
+            const scaleInfo = pixelsPerMeter ? `Skala låst (${Math.round(pixelsPerMeter)} px/m). ` : '';
+            guideText.innerHTML = `${scaleInfo}<strong>Välj stång:</strong> Håll fingret mitt på <strong>stångänden</strong> i luppen och släpp.`;
+        } else if (interactionMode === 'pan_zoom') {
+            guideText.innerHTML = `<strong>Zoom & Flytta:</strong> Dra med 1 finger för att flytta, nyp med 2 fingrar för att zooma.`;
         } else {
             if (isTracking) {
-                statusMsg.textContent = `Spårar stång (${Math.round(pixelsPerMeter)} px/m). Redo för frontsquat!`;
+                const playHint = (!isLiveCamera && video.paused) ? ' Tryck på <strong>▶️ Spela</strong> nedan för att mäta!' : ' Spårar stången!';
+                guideText.innerHTML = `<strong>Redo!</strong>${playHint}`;
+            } else {
+                guideText.innerHTML = `Tryck på <strong>🎯 Stång</strong> och markera stångänden.`;
             }
         }
     }
 
-    btnCalibrate.addEventListener('click', () => setInteractionMode('calibrate'));
-    btnTrackTarget.addEventListener('click', () => setInteractionMode('pick_target'));
+    btnCalibPlate.addEventListener('click', () => {
+        calibType = 'plate';
+        calibPoints = [];
+        pixelsPerMeter = null;
+        setInteractionMode('calibrate');
+    });
+
+    btnCalibBody.addEventListener('click', () => {
+        calibType = 'body';
+        calibPoints = [];
+        pixelsPerMeter = null;
+        setInteractionMode('calibrate');
+    });
+
+    btnTrackTarget.addEventListener('click', () => {
+        setInteractionMode('pick_target');
+    });
+
+    btnPanZoom.addEventListener('click', () => {
+        setInteractionMode(interactionMode === 'pan_zoom' ? 'calibrate' : 'pan_zoom');
+    });
+
+    document.getElementById('btnRotate').addEventListener('click', () => {
+        rotationDeg = (rotationDeg + 90) % 360;
+        fitVideoToViewport();
+    });
+
+    document.getElementById('btnResetView').addEventListener('click', () => {
+        fitVideoToViewport();
+    });
+
+    // ÅNGRA SENASTE STEG
+    document.getElementById('btnUndo').addEventListener('click', () => {
+        if (!video.videoWidth) return;
+
+        if (isTracking) {
+            isTracking = false;
+            trackPos = null;
+            templatePatch = null;
+            barPath = [];
+            repState = 'IDLE';
+            setInteractionMode('pick_target');
+        } else if (calibPoints.length === 2) {
+            calibPoints.pop();
+            pixelsPerMeter = null;
+            setInteractionMode('calibrate');
+        } else if (calibPoints.length === 1) {
+            calibPoints = [];
+            pixelsPerMeter = null;
+            setInteractionMode('calibrate');
+        } else {
+            setInteractionMode('calibrate');
+        }
+    });
+
+    // KOORDINATOMVANDLING
+    function screenToVideo(sx, sy) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const dx = (sx - viewOffsetX) / viewScale;
+        const dy = (sy - viewOffsetY) / viewScale;
+        const rad = (-rotationDeg * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        return {
+            x: Math.max(0, Math.min(vw - 1, dx * cos - dy * sin + vw / 2)),
+            y: Math.max(0, Math.min(vh - 1, dx * sin + dy * cos + vh / 2))
+        };
+    }
+
+    function videoToScreen(vx, vy) {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+        const cx = vx - vw / 2;
+        const cy = vy - vh / 2;
+        const rad = (rotationDeg * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        return {
+            x: (cx * cos - cy * sin) * viewScale + viewOffsetX,
+            y: (cx * sin + cy * cos) * viewScale + viewOffsetY
+        };
+    }
+
+    function findNearestCalibPoint(sx, sy, isTouch) {
+        const hitRadius = isTouch ? 34 : 20;
+        let closest = null;
+        let minD = hitRadius;
+        for (const p of calibPoints) {
+            const sp = videoToScreen(p.x, p.y);
+            const d = Math.hypot(sp.x - sx, sp.y - sy);
+            if (d <= minD) {
+                minD = d;
+                closest = p;
+            }
+        }
+        return closest;
+    }
+
+    // HÅLL-OCH-SLÄPP MED FÖRSTORINGSGLAS (TOUCH + MUS)
+    function beginPointerAction(sx, sy, isTouch) {
+        isTouchPlacement = isTouch;
+
+        if (interactionMode === 'pan_zoom') {
+            isDraggingView = true;
+            dragStartX = sx - viewOffsetX;
+            dragStartY = sy - viewOffsetY;
+            return;
+        }
+
+        // Kolla om användaren tar tag i en befintlig kalibreringspunkt för finjustering
+        const existingPt = findNearestCalibPoint(sx, sy, isTouch);
+        if (existingPt) {
+            activeCalibDragPoint = existingPt;
+            return;
+        }
+
+        const targetSy = isTouch ? (sy - TOUCH_LIFT_PX) : sy;
+        const vPt = screenToVideo(sx, targetSy);
+
+        if (interactionMode === 'calibrate') {
+            if (calibPoints.length < 2) {
+                const newPt = { x: vPt.x, y: vPt.y, isPending: true };
+                calibPoints.push(newPt);
+                activeCalibDragPoint = newPt;
+            } else {
+                // Om 2 punkter redan finns och man trycker någon annanstans, flytta närmaste punkt
+                let nearest = calibPoints[0];
+                const d0 = Math.hypot(videoToScreen(calibPoints[0].x, calibPoints[0].y).x - sx, videoToScreen(calibPoints[0].x, calibPoints[0].y).y - sy);
+                const d1 = Math.hypot(videoToScreen(calibPoints[1].x, calibPoints[1].y).x - sx, videoToScreen(calibPoints[1].x, calibPoints[1].y).y - sy);
+                if (d1 < d0) nearest = calibPoints[1];
+                nearest.x = vPt.x;
+                nearest.y = vPt.y;
+                activeCalibDragPoint = nearest;
+            }
+        } else if (interactionMode === 'pick_target' || !isTracking) {
+            // Förhandsvisa stångsiktet i luppen tills fingret släpps
+            activeCalibDragPoint = { x: vPt.x, y: vPt.y, isTargetPreview: true };
+        }
+    }
+
+    function movePointerAction(sx, sy, isTouch) {
+        if (isDraggingView) {
+            viewOffsetX = sx - dragStartX;
+            viewOffsetY = sy - dragStartY;
+            return;
+        }
+
+        if (activeCalibDragPoint) {
+            const targetSy = isTouch ? (sy - TOUCH_LIFT_PX) : sy;
+            const vPt = screenToVideo(sx, targetSy);
+            activeCalibDragPoint.x = vPt.x;
+            activeCalibDragPoint.y = vPt.y;
+
+            if (!activeCalibDragPoint.isTargetPreview && calibPoints.length === 2) {
+                recalculateScaleFromPoints();
+                updateGuideBanner();
+            }
+        }
+    }
+
+    function endPointerAction() {
+        if (isDraggingView) {
+            isDraggingView = false;
+            return;
+        }
+
+        if (!activeCalibDragPoint) return;
+
+        const finishedPt = activeCalibDragPoint;
+        activeCalibDragPoint = null;
+
+        if (finishedPt.isTargetPreview) {
+            if (!pixelsPerMeter) {
+                pixelsPerMeter = Math.max(video.videoWidth, video.videoHeight) * 0.4;
+            }
+            lockTargetAt(finishedPt.x, finishedPt.y);
+            setInteractionMode('ready');
+
+            if (isLiveCamera && !hudAutoOpened) {
+                document.getElementById('fullscreenHud').style.display = 'flex';
+                hudAutoOpened = true;
+            }
+            return;
+        }
+
+        // Bekräfta kalibreringspunkt när fingret släpps
+        finishedPt.isPending = false;
+        if (calibPoints.length === 2) {
+            const distPx = Math.hypot(calibPoints[1].x - calibPoints[0].x, calibPoints[1].y - calibPoints[0].y);
+            if (distPx > 8) {
+                recalculateScaleFromPoints();
+                // Gå vidare till stångval automatiskt om vi just satte punkt #2 för första gången
+                if (interactionMode === 'calibrate' && !isTracking) {
+                    setInteractionMode('pick_target');
+                } else {
+                    updateGuideBanner();
+                }
+            } else {
+                calibPoints.pop();
+                updateGuideBanner();
+            }
+        } else {
+            updateGuideBanner();
+        }
+    }
+
+    // Touch-händelser
+    canvas.addEventListener('touchstart', (e) => {
+        if (!video.videoWidth) return;
+        const rect = canvas.getBoundingClientRect();
+
+        if (e.touches.length === 2) {
+            isDraggingView = false;
+            // Avbryt pågående punktplacering om användaren nyper med 2 fingrar för att zooma
+            if (activeCalibDragPoint) {
+                if (activeCalibDragPoint.isPending) calibPoints.pop();
+                activeCalibDragPoint = null;
+            }
+            initialPinchDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            initialPinchScale = viewScale;
+            pinchMidX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            pinchMidY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+            return;
+        }
+
+        if (e.touches.length === 1) {
+            const sx = e.touches[0].clientX - rect.left;
+            const sy = e.touches[0].clientY - rect.top;
+            beginPointerAction(sx, sy, true);
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (!video.videoWidth) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+
+        if (e.touches.length === 2 && initialPinchDist) {
+            const currentDist = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const curMidX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+            const curMidY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+
+            const newScale = Math.min(Math.max(initialPinchScale * (currentDist / initialPinchDist), 0.25), 10);
+            viewOffsetX = curMidX - (pinchMidX - viewOffsetX) * (newScale / viewScale);
+            viewOffsetY = curMidY - (pinchMidY - viewOffsetY) * (newScale / viewScale);
+            pinchMidX = curMidX;
+            pinchMidY = curMidY;
+            viewScale = newScale;
+            return;
+        }
+
+        if (e.touches.length === 1) {
+            const sx = e.touches[0].clientX - rect.left;
+            const sy = e.touches[0].clientY - rect.top;
+            movePointerAction(sx, sy, true);
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+        initialPinchDist = null;
+        endPointerAction();
+    });
+
+    // Mus-händelser för dator
+    canvas.addEventListener('mousedown', (e) => {
+        if (!video.videoWidth) return;
+        const rect = canvas.getBoundingClientRect();
+        beginPointerAction(e.clientX - rect.left, e.clientY - rect.top, false);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+        if (!video.videoWidth) return;
+        const rect = canvas.getBoundingClientRect();
+        movePointerAction(e.clientX - rect.left, e.clientY - rect.top, false);
+    });
+
+    window.addEventListener('mouseup', () => {
+        endPointerAction();
+    });
+
+    canvas.addEventListener('wheel', (e) => {
+        if (!video.videoWidth) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+        const factor = e.deltaY < 0 ? 1.15 : 0.87;
+        const newScale = Math.min(Math.max(viewScale * factor, 0.25), 10);
+        viewOffsetX = sx - (sx - viewOffsetX) * (newScale / viewScale);
+        viewOffsetY = sy - (sy - viewOffsetY) * (newScale / viewScale);
+        viewScale = newScale;
+    }, { passive: false });
 
     // HUD-kontroller
     const fullscreenHud = document.getElementById('fullscreenHud');
@@ -654,10 +1229,7 @@
     document.getElementById('hudCloseBtn').addEventListener('click', () => {
         fullscreenHud.style.display = 'none';
     });
-    document.getElementById('hudResetBtn').addEventListener('click', resetSet);
-    document.getElementById('btnResetSet').addEventListener('click', resetSet);
-
-    function resetSet() {
+    document.getElementById('hudResetBtn').addEventListener('click', () => {
         completedReps = [];
         selectedRepIdx = -1;
         repState = 'IDLE';
@@ -666,72 +1238,9 @@
         updateRepUI();
         drawVelocityCurve(null);
         updateHud(null);
-        statusMsg.textContent = "Set nollställt. Redo för rep 1.";
-    }
-
-    // Konvertera skärmklick till videopixlar
-    function getVideoCoords(e) {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-        const canvasRatio = canvas.width / canvas.height;
-        const rectRatio = rect.width / rect.height;
-        let renderW, renderH, offsetX, offsetY;
-
-        if (rectRatio > canvasRatio) {
-            renderH = rect.height;
-            renderW = renderH * canvasRatio;
-            offsetX = (rect.width - renderW) / 2;
-            offsetY = 0;
-        } else {
-            renderW = rect.width;
-            renderH = renderW / canvasRatio;
-            offsetX = 0;
-            offsetY = (rect.height - renderH) / 2;
-        }
-
-        const vx = ((clientX - rect.left - offsetX) / renderW) * canvas.width;
-        const vy = ((clientY - rect.top - offsetY) / renderH) * canvas.height;
-        return {
-            x: Math.max(0, Math.min(canvas.width - 1, vx)),
-            y: Math.max(0, Math.min(canvas.height - 1, vy))
-        };
-    }
-
-    canvas.addEventListener('pointerdown', (e) => {
-        if (!video.videoWidth) return;
-        const pt = getVideoCoords(e);
-
-        if (interactionMode === 'calibrate') {
-            calibPoints.push(pt);
-            if (calibPoints.length === 2) {
-                const distPx = Math.hypot(calibPoints[1].x - calibPoints[0].x, calibPoints[1].y - calibPoints[0].y);
-                const diameterMeters = (parseFloat(document.getElementById('plateDiameterCm').value) || 45) / 100;
-                if (distPx > 10) {
-                    pixelsPerMeter = distPx / diameterMeters;
-                    setInteractionMode('pick_target');
-                } else {
-                    calibPoints = [];
-                }
-            }
-        } else if (interactionMode === 'pick_target' || !isTracking) {
-            if (!pixelsPerMeter) {
-                // Standarduppskattning om användaren hoppar över kalibrering
-                pixelsPerMeter = canvas.height * 0.45;
-            }
-            lockTargetAt(pt.x, pt.y);
-            setInteractionMode('none');
-
-            // Öppna helskärms-HUD automatiskt i live-läge så du ser siffrorna direkt vid ställningen
-            if (isLiveCamera && !hudAutoOpened) {
-                fullscreenHud.style.display = 'flex';
-                hudAutoOpened = true;
-            }
-        }
     });
 
-    // Extrahera gråskalemall runt vald punkt
+    // OPTISK MALLMATCHNING
     function extractPatch(imgData, cx, cy, radius) {
         const w = imgData.width;
         const h = imgData.height;
@@ -745,7 +1254,6 @@
             for (let dx = -radius; dx <= radius; dx++) {
                 const px = Math.max(0, Math.min(w - 1, Math.round(cx + dx)));
                 const pIdx = (py * w + px) * 4;
-                // Snabb luminans (gråskala)
                 patch[idx++] = data[pIdx] * 0.299 + data[pIdx + 1] * 0.587 + data[pIdx + 2] * 0.114;
             }
         }
@@ -758,30 +1266,30 @@
         trackPos = { x, y };
         templatePatch = extractPatch(frameData, x, y, PATCH_RADIUS);
         isTracking = true;
-        smoothY = y;
+        smoothY = getVerticalCoord(trackPos);
         smoothVy = 0;
         lastTimestampMs = null;
         repState = 'IDLE';
         barPath = [{ x, y }];
     }
 
-    // Optisk spårning med Sum of Squared Differences (SSD) + Subpixel-interpolering
     function trackNextFrame(frameData) {
         if (!isTracking || !templatePatch || !trackPos) return;
 
         const w = frameData.width;
         const h = frameData.height;
         const data = frameData.data;
-        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - SEARCH_RADIUS));
-        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + SEARCH_RADIUS));
-        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - SEARCH_RADIUS));
-        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + SEARCH_RADIUS));
+        const searchRadius = getSearchRadius();
+
+        const startX = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.x - searchRadius));
+        const endX = Math.min(w - PATCH_RADIUS - 2, Math.round(trackPos.x + searchRadius));
+        const startY = Math.max(PATCH_RADIUS + 1, Math.round(trackPos.y - searchRadius));
+        const endY = Math.min(h - PATCH_RADIUS - 2, Math.round(trackPos.y + searchRadius));
 
         let bestScore = Infinity;
         let bestX = trackPos.x;
         let bestY = trackPos.y;
 
-        // Grovsökning (steg 2 px för maximal 60fps-prestanda på mobil)
         for (let sy = startY; sy <= endY; sy += 2) {
             for (let sx = startX; sx <= endX; sx += 2) {
                 const score = computeSSD(data, w, sx, sy);
@@ -793,7 +1301,6 @@
             }
         }
 
-        // Finsökning (1 px runt bästa träff) + parabolisk subpixel-förfining
         for (let dy = -1; dy <= 1; dy++) {
             for (let dx = -1; dx <= 1; dx++) {
                 const sx = bestX + dx;
@@ -807,7 +1314,6 @@
             }
         }
 
-        // Subpixel-justering i Y-led för mjukare hastighetskurva
         const sTop = computeSSD(data, w, bestX, bestY - 1);
         const sMid = bestScore;
         const sBot = computeSSD(data, w, bestX, bestY + 1);
@@ -820,7 +1326,6 @@
         trackPos.x = bestX;
         trackPos.y = bestY + subY;
 
-        // Adaptiv malluppdatering (15% ny bild) så belysningsförändringar under lyftet hanteras
         const currentPatch = extractPatch(frameData, trackPos.x, trackPos.y, PATCH_RADIUS);
         for (let i = 0; i < templatePatch.length; i++) {
             templatePatch[i] = templatePatch[i] * 0.85 + currentPatch[i] * 0.15;
@@ -832,7 +1337,6 @@
 
     function computeSSD(data, imgW, cx, cy) {
         let ssd = 0;
-        // Sampla varannan pixel inuti patchen för extrem snabbhet i 60 Hz
         for (let dy = -PATCH_RADIUS; dy <= PATCH_RADIUS; dy += 2) {
             const rowOffset = (cy + dy) * imgW;
             const patchRow = (dy + PATCH_RADIUS) * (PATCH_RADIUS * 2 + 1);
@@ -846,41 +1350,46 @@
         return ssd;
     }
 
-    // Fysik- och repetitionsanalys i realtid
+    function getVerticalCoord(pt) {
+        if (rotationDeg === 0) return pt.y;
+        if (rotationDeg === 90) return -pt.x;
+        if (rotationDeg === 180) return -pt.y;
+        if (rotationDeg === 270) return pt.x;
+        return pt.y;
+    }
+
     function updateKinematics(nowMs) {
         if (!isTracking || !trackPos || !pixelsPerMeter) return;
 
+        const currentVert = getVerticalCoord(trackPos);
+
         if (lastTimestampMs === null) {
             lastTimestampMs = nowMs;
-            smoothY = trackPos.y;
+            smoothY = currentVert;
             return;
         }
 
-        const slowMoFactor = parseFloat(document.getElementById('fpsMode').value) || 1;
+        const { fps, slowMoFactor } = getFpsConfig();
         const rawDt = (nowMs - lastTimestampMs) / 1000;
         lastTimestampMs = nowMs;
 
-        // Ignorera orimliga tidshopp (t.ex. vid paus/spolning)
         if (rawDt <= 0.002 || rawDt > 0.25) return;
         const dt = rawDt / slowMoFactor;
 
-        // Exponentiellt lågpassfilter på position för att eliminera kamerabrus
-        const alphaPos = 0.45;
+        const alphaPos = fps <= 30 ? 0.55 : 0.45;
         const prevSmoothY = smoothY;
-        smoothY = alphaPos * trackPos.y + (1 - alphaPos) * smoothY;
+        smoothY = alphaPos * currentVert + (1 - alphaPos) * smoothY;
 
-        // Vertikal hastighet i m/s (positiv = uppåt)
         const instantVy = ((prevSmoothY - smoothY) / pixelsPerMeter) / dt;
-        smoothVy = 0.4 * instantVy + 0.6 * smoothVy;
+        const alphaVel = fps <= 30 ? 0.5 : 0.4;
+        smoothVy = alphaVel * instantVy + (1 - alphaVel) * smoothVy;
 
         document.getElementById('hudLiveVel').textContent = `Live: ${Math.max(0, smoothVy).toFixed(2)} m/s`;
 
         const minVelThresh = parseFloat(document.getElementById('minVelThresh').value) || 0.18;
-        const minRomMeters = 0.22; // Minst 22 cm rörelse för att räknas som ett riktigt lyft (filtrerar bort walkout)
+        const minRomMeters = 0.22;
 
-        // Tillståndsmaskin för Frontsquat / Knäböj / Bänkpress
         if (repState === 'IDLE') {
-            // Starta excentrisk fas när stången rör sig nedåt snabbare än 0.15 m/s
             if (smoothVy < -0.15) {
                 repState = 'ECCENTRIC';
                 repStartY = smoothY;
@@ -888,16 +1397,14 @@
             }
         } else if (repState === 'ECCENTRIC') {
             if (smoothY > repBottomY) {
-                repBottomY = smoothY; // Följ stången ner till vändpunkten
+                repBottomY = smoothY;
             }
             const eccentricDepth = (repBottomY - repStartY) / pixelsPerMeter;
 
-            // Vändpunkt nådd -> stången vänder uppåt över hastighetströskeln
             if (smoothVy > minVelThresh && eccentricDepth >= minRomMeters) {
                 repState = 'CONCENTRIC';
                 currentRepSamples = [{ t: 0, v: smoothVy, y: smoothY }];
             } else if (Math.abs(smoothVy) < 0.04 && eccentricDepth < minRomMeters) {
-                // Falsk start (t.ex. liten knäböjning vid avlyft från rack)
                 repState = 'IDLE';
             }
         } else if (repState === 'CONCENTRIC') {
@@ -908,13 +1415,11 @@
                 y: smoothY
             });
 
-            // Utlåsning i toppen när hastigheten sjunker nära 0 efter att ha lyft minst minRomMeters
             const concentricHeight = (repBottomY - smoothY) / pixelsPerMeter;
             if (smoothVy <= 0.06 && concentricHeight >= minRomMeters) {
                 finalizeRep();
                 repState = 'IDLE';
             } else if (smoothVy < -0.15) {
-                // Avbrutet lyft
                 repState = 'ECCENTRIC';
                 repStartY = smoothY;
                 repBottomY = smoothY;
@@ -935,7 +1440,6 @@
         const meanVel = sumVel / currentRepSamples.length;
 
         const repNum = completedReps.length + 1;
-        // Hitta setets högsta Peak Velocity (vanligtvis rep 1 eller 2)
         const prevMax = completedReps.reduce((max, r) => Math.max(max, r.peakVel), 0);
         const setBaseline = Math.max(prevMax, peakVel);
 
@@ -948,7 +1452,6 @@
         };
         completedReps.push(repObj);
 
-        // Räkna om Velocity Loss (%) för alla reps mot setets högsta hastighet
         completedReps.forEach(r => {
             r.lossPct = setBaseline > 0 ? Math.max(0, ((setBaseline - r.peakVel) / setBaseline) * 100) : 0;
         });
@@ -1007,7 +1510,7 @@
         const threshold = parseFloat(document.getElementById('lossThresholdPct').value) || 15;
 
         if (completedReps.length === 0) {
-            strip.innerHTML = `<div style="font-size: 0.82rem; color: var(--text-muted); padding: 6px 0;">Inga repetitioner registrerade ännu.</div>`;
+            strip.innerHTML = `<div style="font-size: 0.8rem; color: var(--text-muted); padding: 4px 0;">Repetitioner och hastighetstapp visas här.</div>`;
             return;
         }
 
@@ -1019,9 +1522,9 @@
             const selClass = idx === selectedRepIdx ? 'selected' : '';
             return `
                 <div class="rep-card ${statusClass} ${selClass}" onclick="selectRep(${idx})">
-                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">REP ${r.repNum}</div>
-                    <div style="font-size: 1.15rem; font-weight: 800; margin: 2px 0;">${r.peakVel.toFixed(2)} <small style="font-size:0.7rem;">m/s</small></div>
-                    <div style="font-size: 0.75rem; font-weight: 700; color: ${r.lossPct >= threshold ? '#ef4444' : '#94a3b8'};">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">REP ${r.repNum}</div>
+                    <div style="font-size: 1.05rem; font-weight: 800; margin: 1px 0;">${r.peakVel.toFixed(2)} <small style="font-size:0.68rem;">m/s</small></div>
+                    <div style="font-size: 0.72rem; font-weight: 700; color: ${r.lossPct >= threshold ? '#ef4444' : '#94a3b8'};">
                         -${r.lossPct.toFixed(1)}% tapp
                     </div>
                 </div>
@@ -1035,28 +1538,26 @@
         drawVelocityCurve(completedReps[idx]);
     };
 
-    // Rita hastighetskurvan (m/s över tid) för valt rep
     function drawVelocityCurve(rep) {
         const rect = curveCanvas.getBoundingClientRect();
         curveCanvas.width = rect.width || 320;
-        curveCanvas.height = rect.height || 80;
+        curveCanvas.height = rect.height || 58;
         const w = curveCanvas.width;
         const h = curveCanvas.height;
 
         curveCtx.clearRect(0, 0, w, h);
         if (!rep || !rep.curve || rep.curve.length < 2) {
             curveCtx.fillStyle = '#64748b';
-            curveCtx.font = '12px -apple-system, sans-serif';
-            curveCtx.fillText('Hastighetskurva (koncentrisk fas) visas här efter rep 1', 12, h / 2 + 4);
+            curveCtx.font = '11px -apple-system, sans-serif';
+            curveCtx.fillText('Hastighetskurva visas här efter rep 1', 10, h / 2 + 4);
             return;
         }
 
         const samples = rep.curve;
         const maxT = samples[samples.length - 1].t || 1;
         const maxV = Math.max(rep.peakVel * 1.15, 0.5);
-        const pad = 12;
+        const pad = 10;
 
-        // Rutnätslinje för Peak Velocity
         const peakY = h - pad - (rep.peakVel / maxV) * (h - pad * 2);
         curveCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
         curveCtx.setLineDash([4, 4]);
@@ -1066,7 +1567,6 @@
         curveCtx.stroke();
         curveCtx.setLineDash([]);
 
-        // Själva hastighetskurvan
         curveCtx.beginPath();
         samples.forEach((s, i) => {
             const x = pad + (s.t / maxT) * (w - pad * 2);
@@ -1078,15 +1578,95 @@
         curveCtx.lineWidth = 2.5;
         curveCtx.stroke();
 
-        // Textinfo i hörnet av kurvan
         curveCtx.fillStyle = '#f8fafc';
-        curveCtx.font = 'bold 11px -apple-system, sans-serif';
-        curveCtx.fillText(`Rep ${rep.repNum} | Peak: ${rep.peakVel.toFixed(2)} m/s | Mean: ${rep.meanVel.toFixed(2)} m/s | Tid: ${maxT.toFixed(2)}s`, pad, 14);
+        curveCtx.font = 'bold 10px -apple-system, sans-serif';
+        curveCtx.fillText(`Rep ${rep.repNum} | Peak: ${rep.peakVel.toFixed(2)} m/s | Mean: ${rep.meanVel.toFixed(2)} m/s`, pad, 12);
     }
 
-    // Huvudloop för video-rendering och spårning
+    // FÖRSTORINGSGLAS (LUPP) VID HÅLL-OCH-SLÄPP AV PUNKT
+    function drawMagnifier() {
+        if (!activeCalibDragPoint || !video.videoWidth) return;
+
+        const screenPt = videoToScreen(activeCalibDragPoint.x, activeCalibDragPoint.y);
+        const radius = Math.min(canvas.width, canvas.height) < 500 ? 64 : 80;
+        const margin = 12;
+        const topOffset = 52; // Ligger strax under de flytande verktygsknapparna
+        const zoomMultiplier = 4.2;
+        const magScale = viewScale * zoomMultiplier;
+
+        // Flytta luppen till höger hörn om fingret jobbar uppe till vänster
+        const isNearTopLeft = screenPt.x < (radius * 2 + margin * 2) && screenPt.y < (radius * 2 + topOffset + margin);
+        const centerX = isNearTopLeft ? (canvas.width - radius - margin) : (radius + margin);
+        const centerY = radius + topOffset;
+
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 16;
+        ctx.shadowOffsetY = 4;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#090d16';
+        ctx.fill();
+        ctx.clip();
+        ctx.shadowColor = 'transparent';
+
+        ctx.translate(centerX, centerY);
+        ctx.scale(magScale, magScale);
+        ctx.rotate((rotationDeg * Math.PI) / 180);
+        ctx.translate(-activeCalibDragPoint.x, -activeCalibDragPoint.y);
+
+        ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
+        // Rita eventuell kalibreringslinje även inuti förstoringsglaset
+        if (calibPoints.length === 2) {
+            ctx.beginPath();
+            ctx.moveTo(calibPoints[0].x, calibPoints[0].y);
+            ctx.lineTo(calibPoints[1].x, calibPoints[1].y);
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 2 / magScale;
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        // Hårkors i luppens centrum
+        const ringColor = activeCalibDragPoint.isTargetPreview ? '#38bdf8' : '#a855f7';
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.clip();
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(centerX - radius, centerY);
+        ctx.lineTo(centerX - 6, centerY);
+        ctx.moveTo(centerX + 6, centerY);
+        ctx.lineTo(centerX + radius, centerY);
+        ctx.moveTo(centerX, centerY - radius);
+        ctx.lineTo(centerX, centerY - 6);
+        ctx.moveTo(centerX, centerY + 6);
+        ctx.lineTo(centerX, centerY + radius);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+        ctx.fillStyle = ringColor;
+        ctx.fill();
+        ctx.restore();
+
+        // Yttre ram på förstoringsglaset
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = ringColor;
+        ctx.stroke();
+        ctx.restore();
+    }
+
     function startProcessingLoop() {
-        function step(now) {
+        function step() {
             if (video.readyState >= 2) {
                 if (!video.paused && !video.ended) {
                     procCtx.drawImage(video, 0, 0, procCanvas.width, procCanvas.height);
@@ -1095,8 +1675,7 @@
                     updateKinematics(performance.now());
 
                     if (!isLiveCamera) {
-                        seekBar.value = video.currentTime;
-                        document.getElementById('videoTimeLabel').textContent = `${video.currentTime.toFixed(1)}s`;
+                        updateTimeDisplay();
                     }
                 }
                 renderViewport();
@@ -1107,56 +1686,83 @@
     }
 
     function renderViewport() {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!video.videoWidth) return;
 
-        // Rita kalibreringslinje för viktskivan
+        ctx.save();
+        ctx.translate(viewOffsetX, viewOffsetY);
+        ctx.scale(viewScale, viewScale);
+        ctx.rotate((rotationDeg * Math.PI) / 180);
+        ctx.translate(-video.videoWidth / 2, -video.videoHeight / 2);
+
+        ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+
+        const invScale = 1 / viewScale;
+
+        // Rita kalibreringslinje & siktespunkter (för viktskiva eller kroppslängd)
         if (calibPoints.length > 0) {
-            ctx.save();
-            ctx.strokeStyle = '#a855f7';
-            ctx.lineWidth = 3;
-            calibPoints.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-                ctx.fillStyle = '#a855f7';
-                ctx.fill();
-            });
             if (calibPoints.length === 2) {
                 ctx.beginPath();
                 ctx.moveTo(calibPoints[0].x, calibPoints[0].y);
                 ctx.lineTo(calibPoints[1].x, calibPoints[1].y);
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 3 * invScale;
                 ctx.stroke();
             }
-            ctx.restore();
+
+            calibPoints.forEach(p => {
+                const isDragging = (p === activeCalibDragPoint);
+                const r = (isDragging ? 11 : 8) * invScale;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+                ctx.strokeStyle = isDragging ? '#38bdf8' : '#a855f7';
+                ctx.lineWidth = 2.5 * invScale;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2 * invScale, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            });
         }
 
-        // Rita stångens lyftbana (Bar Path)
+        // Förhandsvisning av stångsikte medan fingret hålls nere
+        if (activeCalibDragPoint && activeCalibDragPoint.isTargetPreview) {
+            const r = PATCH_RADIUS;
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2.5 * invScale;
+            ctx.strokeRect(activeCalibDragPoint.x - r, activeCalibDragPoint.y - r, r * 2, r * 2);
+        }
+
+        // Rita stångens lyftbana
         if (barPath.length > 1) {
-            ctx.save();
             ctx.beginPath();
             barPath.forEach((p, idx) => {
                 if (idx === 0) ctx.moveTo(p.x, p.y);
                 else ctx.lineTo(p.x, p.y);
             });
-            ctx.strokeStyle = repState === 'CONCENTRIC' ? '#10b981' : 'rgba(56, 189, 248, 0.7)';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = repState === 'CONCENTRIC' ? '#10b981' : 'rgba(56, 189, 248, 0.75)';
+            ctx.lineWidth = 3 * invScale;
             ctx.stroke();
-            ctx.restore();
         }
 
-        // Rita sikte på den spårade stångänden
+        // Rita sikte på spårad stångände
         if (isTracking && trackPos) {
-            ctx.save();
             const r = PATCH_RADIUS;
             ctx.strokeStyle = repState === 'CONCENTRIC' ? '#10b981' : '#38bdf8';
-            ctx.lineWidth = 2.5;
+            ctx.lineWidth = 2.5 * invScale;
             ctx.strokeRect(trackPos.x - r, trackPos.y - r, r * 2, r * 2);
 
             ctx.beginPath();
-            ctx.arc(trackPos.x, trackPos.y, 3, 0, Math.PI * 2);
+            ctx.arc(trackPos.x, trackPos.y, 3 * invScale, 0, Math.PI * 2);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
-            ctx.restore();
         }
+
+        ctx.restore();
+
+        // Rita förstoringsglaset ovanpå allt när fingret hålls nere
+        drawMagnifier();
     }
 
     drawVelocityCurve(null);
